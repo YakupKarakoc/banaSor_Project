@@ -2,8 +2,9 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native';
-import LoginScreen from '../banaSorProject/src/screens/Login';
-import SignupScreen from '../banaSorProject/src/screens/Signup';
+import LoginScreen from './src/screens/Login.js';
+import SignupScreen from './src/screens/Signup.js';
+
 
 const Stack = createStackNavigator();
 
