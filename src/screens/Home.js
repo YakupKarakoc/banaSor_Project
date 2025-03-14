@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,21 +6,29 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  ScrollView
+  ScrollView,
+  Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-// Eğer Bare workflow ise (ÖNERİLEN):
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
-// Eğer linear-gradient kullanmak istiyorsan, şu paketi kur: 
-// npm install react-native-linear-gradient
-// npx react-native link react-native-linear-gradient
 import LinearGradient from 'react-native-linear-gradient';
+import * as Animatable from 'react-native-animatable';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const [searchValue, setSearchValue] = useState('');
+  
+  // Animasyon Değerleri
+  const fadeAnim = new Animated.Value(0);
+  
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
-  // Örnek kullanıcı adı
   const username = 'Yakup';
 
   const menuItems = [
@@ -37,105 +45,97 @@ const HomeScreen = () => {
   };
 
   return (
-    <LinearGradient
-      colors={['#f75c5b', '#ff8a5c']} // Kırmızıdan turuncuya
-      style={styles.gradientContainer}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Üst kısım - Kullanıcı bilgisi */}
-        <View style={styles.header}>
-          <Image
-            source={require('../assets/images/banaSor_logo.jpg')}
-            style={styles.logo}
-          />
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.welcomeText}>Hoş Geldin,</Text>
-            <Text style={styles.usernameText}>{username}!</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.profileIconWrapper}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Ionicons name="person-circle-outline" size={40} color="#fff" />
-          </TouchableOpacity>
+    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.gradientContainer}>
+      
+      {/* Üst Kısım */}
+      <Animatable.View animation="fadeInDown" duration={800} style={styles.header}>
+        <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
+        <View style={styles.headerText}>
+          <Text style={styles.welcomeText}>Hoş Geldin,</Text>
+          <Text style={styles.usernameText}>{username}!</Text>
         </View>
+        <TouchableOpacity style={styles.profileIconWrapper} onPress={() => navigation.navigate('Profile')}>
+          <Ionicons name="person-circle-outline" size={42} color="#fff" />
+        </TouchableOpacity>
+      </Animatable.View>
 
-        {/* Arama kutusu */}
-        <View style={styles.searchContainer}>
+      {/* Ana İçerik */}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        
+        {/* Arama Kutusu */}
+        <Animatable.View animation="fadeInUp" duration={800} delay={200} style={styles.searchContainer}>
           <Ionicons name="search-outline" size={20} color="#777" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Üniversite veya kullanıcı ara..."
             placeholderTextColor="#999"
+            value={searchValue}
+            onChangeText={setSearchValue}
           />
-        </View>
+        </Animatable.View>
 
-        {/* Menü listesi */}
+        {/* Menü */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={item.onPress}
-            >
-              <Ionicons
-                name={item.icon}
-                size={26}
-                color="#f75c5b"
-                style={{ marginRight: 12 }}
-              />
-              <Text style={styles.menuText}>{item.label}</Text>
-            </TouchableOpacity>
+            <Animatable.View key={index} animation="fadeInUp" duration={600} delay={index * 100}>
+              <TouchableOpacity style={styles.menuItem} onPress={item.onPress} activeOpacity={0.7}>
+                <Ionicons name={item.icon} size={24} color="#f75c5b" style={{ marginRight: 12 }} />
+                <Text style={styles.menuText}>{item.label}</Text>
+              </TouchableOpacity>
+            </Animatable.View>
           ))}
         </View>
 
-        {/* Çıkış butonu */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.logoutText}>Çıkış Yap</Text>
-        </TouchableOpacity>
+        {/* Çıkış Butonu */}
+        <Animatable.View animation="pulse" iterationCount="infinite" duration={3000}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.logoutText}>Çıkış Yap</Text>
+          </TouchableOpacity>
+        </Animatable.View>
       </ScrollView>
     </LinearGradient>
   );
 };
 
-/* ------------------ STYLES ------------------ */
+export default HomeScreen;
+
+/* ------------------- STYLES ------------------- */
 const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
   },
-  container: {
-    padding: 15,
-  },
   header: {
-    marginTop: 50,
+    marginTop: 45,
+    marginHorizontal: 20,
     marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  headerTextContainer: {
-    marginLeft: 10,
-    flex: 1,
-  },
   logo: {
     borderRadius: 25,
-
-    width: 50,
-    height: 50,
+    width: 45,
+    height: 45,
     resizeMode: 'contain',
     marginRight: 10,
   },
+  headerText: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   welcomeText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
   },
   usernameText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
+    marginTop: 2,
   },
-  profileIconWrapper: {
-    // Ekstra style gerekirse
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -145,6 +145,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   searchIcon: {
     marginRight: 10,
@@ -167,7 +172,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   menuText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
   },
@@ -177,14 +182,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f75c5b',
     borderRadius: 12,
     padding: 15,
-    elevation: 2,
     justifyContent: 'center',
+    elevation: 2,
   },
   logoutText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
   },
 });
-
-export default HomeScreen;
