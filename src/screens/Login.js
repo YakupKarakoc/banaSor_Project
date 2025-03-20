@@ -11,10 +11,12 @@ import {
   Keyboard,
   Animated,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import axios from 'axios';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -31,13 +33,35 @@ const LoginScreen = () => {
     }).start();
   };
 
+  const handleLogin = async () => {
+    try {
+      const res = await axios.post('http://10.0.2.2:3000/api/auth/login', {
+        email,
+        sifre: password,
+      });
+
+      // Eğer backend 'success' yerine 'message' ve 'token' döndürüyorsa:
+      if (res.data.error) {
+        Alert.alert('Hata', res.data.error);
+        return;
+      }
+
+      Alert.alert('Başarılı', 'Giriş yapıldı!');
+      // Giriş başarılı, anasayfaya yönlendir
+      navigation.navigate('Home');
+    } catch (error) {
+      Alert.alert('Sunucu hatası', error.message);
+    }
+  };
+
   const onPressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
       friction: 3,
       useNativeDriver: true,
-    }).start(() => {
-      navigation.navigate('Home');
+    }).start(async () => {
+      // Animasyon bitince handleLogin fonksiyonunu çağır
+      await handleLogin();
     });
   };
 
@@ -49,10 +73,7 @@ const LoginScreen = () => {
       >
         {/* Üst alan (gradient + dalgalar + logo + yazılar) */}
         <View style={styles.headerContainer}>
-          <LinearGradient
-            colors={['#f75c5b', '#ff8a5c']}
-            style={styles.topGradient}
-          >
+          <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.topGradient}>
             <View style={styles.logoCircle}>
               <Image
                 source={require('../assets/images/banaSor_logo.jpg')}
@@ -131,7 +152,7 @@ const LoginScreen = () => {
           </Animated.View>
 
           <View style={styles.bottomText}>
-            <Text style={styles.signupText}>Zaten hesabınız var mı? </Text>
+            <Text style={styles.signupText}>Hesabınız yok mu? </Text>
             <Pressable onPress={() => navigation.navigate('Signup')}>
               <Text style={styles.signupLinkBold}>Kayıt Ol</Text>
             </Pressable>
@@ -214,7 +235,7 @@ const styles = StyleSheet.create({
   /* ALT BEYAZ KART */
   formCard: {
     flex: 1,
-    marginTop: -50, 
+    marginTop: -50,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     padding: 20,

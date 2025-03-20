@@ -14,23 +14,67 @@ import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import axios from 'axios';
 
 const SignupScreen = () => {
   const navigation = useNavigation();
   const [role, setRole] = useState('aday');
-  const [name, setName] = useState('');
+  const [name, setName] = useState('');       // ad
+  const [surname, setSurname] = useState(''); // soyad
+  const [kullaniciAdi, setKullaniciAdi] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [ref1, setRef1] = useState('');
-  const [ref2, setRef2] = useState('');
 
-  const handleSignup = () => {
-    if (role === 'ogrenci' && !email.endsWith('@edu.tr')) {
-      Alert.alert('Hata', 'Üniversite öğrencisi kaydı için @edu.tr maili gereklidir.');
+  // kullanıcıTuruId = 0 => aday, 1 => ogrenci, 2 => mezun
+  // [ Not: Belki 1,2,3 dersen güncelle. ]
+  const getKullaniciTuruId = () => {
+    if (role === 'aday') return 0;
+    if (role === 'ogrenci') return 1;
+    return 2; // mezun
+  };
+
+  const handleSignup = async () => {
+    if (password !== confirmPassword) {
+      Alert.alert('Hata', 'Şifreler eşleşmiyor!');
       return;
     }
-    Alert.alert('Başarı', 'Kayıt başarılı!');
+
+    const turuId = getKullaniciTuruId();
+
+    try {
+      const res = await axios.post('http://10.0.2.2:3000/api/auth/register', {
+        ad: name,
+        soyad: surname,
+        kullaniciAdi,
+        email,
+        sifre: password,
+        kullaniciTuruId: turuId,
+      });
+
+      if (res.data.error) {
+        Alert.alert('Hata', res.data.error);
+        return;
+      }
+
+      // Kayıt başarılı -> user: newUser.rows[0]
+      Alert.alert('Başarılı', 'Kayıt başarılı!');
+      const createdUser = res.data.user; // backend'de { user: ... } döndürüyor
+
+      // Otomatik doğrulama kodu gönderelim
+      await axios.post('http://10.0.2.2:3000/api/auth/sendVerification', {
+        kullaniciId: createdUser.kullaniciid,
+        email: createdUser.email,
+      });
+
+      // VerifyScreen sayfasına yönlendir, id gönder
+      navigation.navigate('Verify', {
+        kullaniciId: createdUser.kullaniciid,
+        email: createdUser.email,
+      });
+    } catch (error) {
+      Alert.alert('Sunucu Hatası', error.message);
+    }
   };
 
   return (
@@ -88,9 +132,23 @@ const SignupScreen = () => {
 
         <TextInput
           style={styles.input}
-          placeholder="Ad Soyad"
+          placeholder="Adınız"
           value={name}
           onChangeText={setName}
+          placeholderTextColor="#999"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Soyadınız"
+          value={surname}
+          onChangeText={setSurname}
+          placeholderTextColor="#999"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Kullanıcı Adı"
+          value={kullaniciAdi}
+          onChangeText={setKullaniciAdi}
           placeholderTextColor="#999"
         />
         <TextInput
@@ -118,29 +176,8 @@ const SignupScreen = () => {
           placeholderTextColor="#999"
         />
 
-        {role === 'mezun' && (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="1. Referans Maili"
-              keyboardType="email-address"
-              value={ref1}
-              onChangeText={setRef1}
-              placeholderTextColor="#999"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="2. Referans Maili"
-              keyboardType="email-address"
-              value={ref2}
-              onChangeText={setRef2}
-              placeholderTextColor="#999"
-            />
-          </>
-        )}
-
         <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
-          <Text style={styles.signupButtonText}>Kaydol</Text>
+          <Text style={styles.signupButtonText}>Kayıt Ol</Text>
         </TouchableOpacity>
 
         <View style={styles.bottomLink}>
@@ -156,19 +193,17 @@ const SignupScreen = () => {
 
 export default SignupScreen;
 
-/* -------------- STYLES -------------- */
 const LOGO_SIZE = 70;
-
 const styles = StyleSheet.create({
+  // BENZER STİLLER...
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  /* Üst Kısım: gradient + dalgalar + logo + yazılar */
   headerContainer: {
     position: 'relative',
     width: '100%',
-    height: '40%', // Biraz artırarak metinlerin net görünmesini sağladık
+    height: '40%',
     overflow: 'hidden',
   },
   topGradient: {
@@ -203,30 +238,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 8,
   },
-
   waveWrapper1: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    height: 80, // Yarı saydam dalga
+    height: 80,
   },
   waveWrapper2: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    height: 90, // Beyaz dalga
+    height: 90,
   },
 
-  /* Beyaz Kart Formu */
   formWrapper: {
     flex: 1,
     backgroundColor: '#fff',
-    marginTop: -30, // Dalgaya gömme
+    marginTop: -30,
     marginHorizontal: 20,
     borderRadius: 25,
     padding: 20,
     alignItems: 'center',
-    // Gölge
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
