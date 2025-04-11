@@ -10,6 +10,7 @@ import {
   Animated,
   Pressable,
   Image,
+  ScrollView,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
@@ -26,8 +27,9 @@ const SignupScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referans1, setReferans1] = useState('');
+  const [referans2, setReferans2] = useState('');
 
-  // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -57,6 +59,8 @@ const SignupScreen = () => {
         email,
         sifre: password,
         kullaniciTuruId: turuId,
+        referans1: role === 'mezun' ? referans1 : null,
+        referans2: role === 'mezun' ? referans2 : null,
       });
       if (res.data.error) return Alert.alert('Hata', res.data.error);
       Alert.alert('Başarılı', 'Kayıt başarılı!');
@@ -76,15 +80,13 @@ const SignupScreen = () => {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      {/* HEADER */}
       <LinearGradient colors={['#ff6b6b', '#ff9f6b']} style={styles.headerBox}>
-        <Text style={styles.headerTitle}>Kayıt Ol</Text>
+        <Text style={styles.headerTitle}>Kayıt Ol</Text>
         <View style={styles.logoWrapper}>
           <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
         </View>
       </LinearGradient>
 
-      {/* FORM CARD */}
       <Animated.View
         style={[
           styles.formWrapper,
@@ -94,52 +96,77 @@ const SignupScreen = () => {
           },
         ]}
       >
-        {/* Role Picker */}
-        <View style={styles.pickerContainer}>
-          <Icon name="people-outline" size={18} color="#666" style={styles.pickerIcon} />
-          <Picker selectedValue={role} onValueChange={setRole} style={styles.picker}>
-            <Picker.Item label="Aday Öğrenci" value="aday" />
-            <Picker.Item label="Üniversite Öğrencisi" value="ogrenci" />
-            <Picker.Item label="Mezun Öğrenci" value="mezun" />
-          </Picker>
-        </View>
-
-        {/* Inputs */}
-        {[
-          { placeholder: 'Adınız', value: name, set: setName, icon: 'person-outline' },
-          { placeholder: 'Soyadınız', value: surname, set: setSurname, icon: 'people-outline' },
-          { placeholder: 'Kullanıcı Adı', value: kullaniciAdi, set: setKullaniciAdi, icon: 'at-outline' },
-          { placeholder: 'E‑posta', value: email, set: setEmail, icon: 'mail-outline', keyboard: 'email-address' },
-          { placeholder: 'Şifre', value: password, set: setPassword, icon: 'lock-closed-outline', secure: true },
-          { placeholder: 'Şifreyi Onayla', value: confirmPassword, set: setConfirmPassword, icon: 'lock-open-outline', secure: true },
-        ].map((item, idx) => (
-          <View style={styles.inputWrapper} key={idx}>
-            <Icon name={item.icon} size={18} color="#666" style={styles.leftIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder={item.placeholder}
-              placeholderTextColor="#999"
-              value={item.value}
-              onChangeText={item.set}
-              keyboardType={item.keyboard || 'default'}
-              secureTextEntry={item.secure || false}
-            />
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.pickerContainer}>
+            <Icon name="people-outline" size={18} color="#666" style={styles.pickerIcon} />
+            <Picker selectedValue={role} onValueChange={setRole} style={styles.picker}>
+              <Picker.Item label="Aday Öğrenci" value="aday" />
+              <Picker.Item label="Üniversite Öğrencisi" value="ogrenci" />
+              <Picker.Item label="Mezun Öğrenci" value="mezun" />
+            </Picker>
           </View>
-        ))}
 
-        {/* Button */}
-        <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
-          <Pressable onPressIn={onPressIn} onPressOut={onPressOut} style={styles.signupButton}>
-            <Text style={styles.signupButtonText}>Kayıt Ol</Text>
-          </Pressable>
-        </Animated.View>
+          {[{ placeholder: 'Adınız', value: name, set: setName, icon: 'person-outline' },
+            { placeholder: 'Soyadınız', value: surname, set: setSurname, icon: 'people-outline' },
+            { placeholder: 'Kullanıcı Adı', value: kullaniciAdi, set: setKullaniciAdi, icon: 'at-outline' },
+            { placeholder: 'E‑posta', value: email, set: setEmail, icon: 'mail-outline', keyboard: 'email-address' },
+            { placeholder: 'Şifre', value: password, set: setPassword, icon: 'lock-closed-outline', secure: true },
+            { placeholder: 'Şifreyi Onayla', value: confirmPassword, set: setConfirmPassword, icon: 'lock-open-outline', secure: true },
+          ].map((item, idx) => (
+            <View style={styles.inputWrapper} key={idx}>
+              <Icon name={item.icon} size={18} color="#666" style={styles.leftIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder={item.placeholder}
+                placeholderTextColor="#999"
+                value={item.value}
+                onChangeText={item.set}
+                keyboardType={item.keyboard || 'default'}
+                secureTextEntry={item.secure || false}
+              />
+            </View>
+          ))}
 
-        <View style={styles.bottomLink}>
-          <Text style={styles.signupText}>Zaten hesabınız var mı? </Text>
-          <Pressable onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.signupLinkBold}>Giriş Yap</Text>
-          </Pressable>
-        </View>
+          {role === 'mezun' && (
+            <>
+              <View style={styles.inputWrapper}>
+                <Icon name="mail-outline" size={18} color="#666" style={styles.leftIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Referans E-posta 1"
+                  placeholderTextColor="#999"
+                  value={referans1}
+                  onChangeText={setReferans1}
+                  keyboardType="email-address"
+                />
+              </View>
+              <View style={styles.inputWrapper}>
+                <Icon name="mail-outline" size={18} color="#666" style={styles.leftIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Referans E-posta 2"
+                  placeholderTextColor="#999"
+                  value={referans2}
+                  onChangeText={setReferans2}
+                  keyboardType="email-address"
+                />
+              </View>
+            </>
+          )}
+
+          <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
+            <Pressable onPressIn={onPressIn} onPressOut={onPressOut} style={styles.signupButton}>
+              <Text style={styles.signupButtonText}>Kayıt Ol</Text>
+            </Pressable>
+          </Animated.View>
+
+          <View style={styles.bottomLink}>
+            <Text style={styles.signupText}>Zaten hesabınız var mı? </Text>
+            <Pressable onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.signupLinkBold}>Giriş Yap</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
       </Animated.View>
     </KeyboardAvoidingView>
   );
@@ -147,10 +174,9 @@ const SignupScreen = () => {
 
 export default SignupScreen;
 
-/* ---------- STYLES ---------- */
-const HEADER_HEIGHT = '28%'; // daha da küçültüldü, kart yukarı çıksın
+const HEADER_HEIGHT = '28%';
 const CARD_RADIUS = 32;
-const LOGO_SIZE = 122;
+const LOGO_SIZE = 92;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
@@ -175,7 +201,7 @@ const styles = StyleSheet.create({
   formWrapper: {
     flex: 1,
     backgroundColor: '#fff',
-    marginTop: -CARD_RADIUS * 1.2, // daha yukarı
+    marginTop: -CARD_RADIUS * 1.2,
     marginHorizontal: 24,
     borderRadius: CARD_RADIUS,
     padding: 24,
@@ -192,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingLeft: 40,
     position: 'relative',
-    height: 52,
+    height: 42,
     justifyContent: 'center',
   },
   pickerIcon: { position: 'absolute', left: 15, zIndex: 2 },
