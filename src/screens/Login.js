@@ -1,163 +1,213 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Animated,
-  Pressable,
-  Alert,
+  StyleSheet, Text, View, TextInput, Image, KeyboardAvoidingView,
+  Platform, TouchableWithoutFeedback, Keyboard, Animated, Pressable,
+  Alert, Modal
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
 const LoginScreen = () => {
-  const navigation = useNavigation();
-  const [email, setEmail] = useState('');
+  const navigation   = useNavigation();
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
 
-  // Buton basma animasyonu için
+  /* ---------- şifre sıfırlama state ---------- */
+  const [modalVisible, setModalVisible] = useState(false);
+  const [resetStep, setResetStep]       = useState(1); // 1: e‑posta, 2: kod+şifre
+  const [resetEmail, setResetEmail]     = useState('');
+  const [resetCode, setResetCode]       = useState('');
+  const [newPass, setNewPass]           = useState('');
+
+  /* ---------- animasyonlar ---------- */
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+  }, []);
 
-  const onPressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
+  const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.94, useNativeDriver: true }).start();
+  const onPressOut = () =>
+    Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true })
+      .start(handleLogin);
 
+  /* ---------- login ---------- */
   const handleLogin = async () => {
     try {
-      const res = await axios.post('http://10.0.2.2:3000/api/auth/login', {
-        email,
-        sifre: password,
+      const r = await axios.post('http://10.0.2.2:3000/api/auth/login', {
+        email, sifre: password,
       });
-
-      // Eğer backend 'success' yerine 'message' ve 'token' döndürüyorsa:
-      if (res.data.error) {
-        Alert.alert('Hata', res.data.error);
-        return;
-      }
-
+      if (r.data.error) return Alert.alert('Hata', r.data.error);
       Alert.alert('Başarılı', 'Giriş yapıldı!');
-      // Giriş başarılı, anasayfaya yönlendir
       navigation.navigate('Home');
-    } catch (error) {
-      Alert.alert('Sunucu hatası', error.message);
+    } catch (e) {
+      Alert.alert('Sunucu hatası', e.message);
     }
   };
 
-  const onPressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 3,
-      useNativeDriver: true,
-    }).start(async () => {
-      // Animasyon bitince handleLogin fonksiyonunu çağır
-      await handleLogin();
-    });
+  /* ---------- şifre sıfırlama – adım 1 ---------- */
+  const sendResetCode = async () => {
+    try {
+      await axios.post('http://10.0.2.2:3000/api/auth/forgotPassword', { email: resetEmail });
+      Alert.alert('Kod gönderildi', 'E‑posta kutunu kontrol et.');
+      setResetStep(2);
+    } catch (e) {
+      Alert.alert('Hata', e.response?.data?.error || e.message);
+    }
+  };
+
+  /* ---------- şifre sıfırlama – adım 2 ---------- */
+  const resetPassword = async () => {
+    if (newPass.length < 6) return Alert.alert('Hata', 'Şifre en az 6 karakter olmalı.');
+    try {
+      await axios.post('http://10.0.2.2:3000/api/auth/resetPassword', {
+        email: resetEmail,
+        resetCode,
+        newPassword: newPass,
+      });
+      Alert.alert('Başarılı', 'Şifren güncellendi.');
+      closeModal();
+    } catch (e) {
+      Alert.alert('Hata', e.response?.data?.error || e.message);
+    }
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setResetStep(1);
+    setResetEmail('');
+    setResetCode('');
+    setNewPass('');
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        {/* Üst alan (gradient + dalgalar + logo + yazılar) */}
-        <View style={styles.headerContainer}>
-          <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.topGradient}>
-            <View style={styles.logoCircle}>
-              <Image
-                source={require('../assets/images/banaSor_logo.jpg')}
-                style={styles.logo}
-              />
-            </View>
-            <Text style={styles.appName}>banaSor</Text>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        {/* ---------- HEADER ---------- */}
+        <LinearGradient colors={['#ff6b6b', '#ff9f6b']} style={styles.headerBox}>
+          <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
+        </LinearGradient>
 
-            <Text style={styles.welcome}>Hoş Geldin!</Text>
-            <Text style={styles.subtitle}>Giriş yapmak için bilgilerini gir.</Text>
-          </LinearGradient>
+        {/* ---------- CARD ---------- */}
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              opacity: fadeAnim,
+              transform: [
+                {
+                  translateY: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [40, 0],
+                  }),
+                },
+              ],
+            },
+          ]}>
+          <Text style={styles.loginTitle}>Giriş Yap</Text>
 
-          {/* Dalga Katmanı #1 (Yarı saydam) */}
-          <View style={styles.waveWrapper1}>
-            <Svg width="100%" height="100%" viewBox="0 0 1440 320">
-              <Path
-                fill="rgba(255,255,255,0.5)"
-                d="M0,256L48,224C96,192,192,128,288,122.7C384,117,480,171,576,197.3C672,224,768,224,864,202.7C960,181,1056,139,1152,149.3C1248,160,1344,224,1392,256L1440,288L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-              />
-            </Svg>
+          {/* email */}
+          <View style={styles.inputWrapper}>
+            <Icon name="mail-outline" size={20} color="#999" style={styles.leftIcon} />
+            <TextInput
+              placeholder="E‑posta"
+              placeholderTextColor="#999"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+            />
           </View>
 
-          {/* Dalga Katmanı #2 (Beyaz) */}
-          <View style={styles.waveWrapper2}>
-            <Svg width="100%" height="100%" viewBox="0 0 1440 320">
-              <Path
-                fill="#fff"
-                d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,186.7C672,171,768,117,864,112C960,107,1056,149,1152,154.7C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-              />
-            </Svg>
-          </View>
-        </View>
-
-        {/* ALT BEYAZ KART (Form) */}
-        <View style={styles.formCard}>
-          <View style={styles.inputContainer}>
-            {/* E-posta */}
-            <View style={styles.iconInputWrapper}>
-              <Text style={styles.icon}>📧</Text>
-              <TextInput
-                style={[styles.input, { paddingLeft: 45 }]}
-                placeholder="E-posta"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-                placeholderTextColor="#888"
-              />
-            </View>
-
-            {/* Şifre */}
-            <View style={styles.iconInputWrapper}>
-              <Text style={styles.icon}>🔒</Text>
-              <TextInput
-                style={[styles.input, { paddingLeft: 45 }]}
-                placeholder="Şifre"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                placeholderTextColor="#888"
-              />
-            </View>
+          {/* password */}
+          <View style={styles.inputWrapper}>
+            <Icon name="lock-closed-outline" size={20} color="#999" style={styles.leftIcon} />
+            <TextInput
+              placeholder="Şifre"
+              placeholderTextColor="#999"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              style={styles.input}
+            />
           </View>
 
-          {/* Animasyonlu Buton */}
+          {/* forgot */}
+          <Pressable onPress={() => setModalVisible(true)} style={styles.forgotWrapper}>
+            <Text style={styles.forgotText}>Şifremi unuttum?</Text>
+          </Pressable>
+
+          {/* login btn */}
           <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
-            <Pressable
-              onPressIn={onPressIn}
-              onPressOut={onPressOut}
-              style={({ pressed }) => [
-                styles.loginButton,
-                pressed && { opacity: 0.9 },
-              ]}
-            >
-              <Text style={styles.loginButtonText}>Giriş Yap</Text>
+            <Pressable onPressIn={onPressIn} onPressOut={onPressOut} style={styles.loginBtn}>
+              <Text style={styles.loginBtnText}>Giriş Yap</Text>
             </Pressable>
           </Animated.View>
 
-          <View style={styles.bottomText}>
-            <Text style={styles.signupText}>Hesabınız yok mu? </Text>
+          {/* bottom */}
+          <View style={styles.bottomRow}>
+            <Text style={styles.bottomText}>Hesabınız yok mu?</Text>
             <Pressable onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.signupLinkBold}>Kayıt Ol</Text>
+              <Text style={styles.signupLink}>Kayıt Ol</Text>
             </Pressable>
           </View>
-        </View>
+        </Animated.View>
+
+        {/* ---------- Şifre Sıfırlama Modalı ---------- */}
+        <Modal visible={modalVisible} animationType="slide" transparent>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>
+                {resetStep === 1 ? 'Kod Gönder' : 'Şifreyi Sıfırla'}
+              </Text>
+
+              {resetStep === 1 ? (
+                <>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="E‑posta adresin"
+                    placeholderTextColor="#999"
+                    keyboardType="email-address"
+                    value={resetEmail}
+                    onChangeText={setResetEmail}
+                  />
+                  <Pressable style={styles.modalBtn} onPress={sendResetCode}>
+                    <Text style={styles.modalBtnTxt}>Kodu Gönder</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Doğrulama Kodu"
+                    placeholderTextColor="#999"
+                    value={resetCode}
+                    onChangeText={setResetCode}
+                  />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Yeni Şifre"
+                    placeholderTextColor="#999"
+                    secureTextEntry
+                    value={newPass}
+                    onChangeText={setNewPass}
+                  />
+                  <Pressable style={styles.modalBtn} onPress={resetPassword}>
+                    <Text style={styles.modalBtnTxt}>Şifreyi Güncelle</Text>
+                  </Pressable>
+                </>
+              )}
+
+              <Pressable onPress={closeModal} style={styles.modalClose}>
+                <Icon name="close" size={24} color="#666" />
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
@@ -165,136 +215,102 @@ const LoginScreen = () => {
 
 export default LoginScreen;
 
-/* ----------------- STYLES ----------------- */
-const LOGO_SIZE = 70;
+/* ---------- STYLES ---------- */
+const CARD_RADIUS = 38;
+const LOGO_SIZE = 140;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  /* ÜST ALAN (GRADIENT + DALGALAR + LOGO + YAZILAR) */
-  headerContainer: {
-    position: 'relative',
-    width: '100%',
-    height: '40%', // Biraz arttırdık, metin dalgaya girmesin
-    overflow: 'hidden',
-  },
-  topGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  logoCircle: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-    borderRadius: LOGO_SIZE / 2,
-    backgroundColor: '#fff',
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: '#f1f1f1' },
+  headerBox: {
+    height: '36%',
     justifyContent: 'center',
-    marginBottom: 6,
-  },
-  logo: {
-    width: LOGO_SIZE * 0.8,
-    height: LOGO_SIZE * 0.8,
-    borderRadius: LOGO_SIZE * 0.4,
-    resizeMode: 'contain',
-  },
-  appName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  welcome: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#fff',
-    marginTop: 2,
-    marginBottom: 8,
-  },
-
-  /* DALGALAR */
-  waveWrapper1: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    height: 100,
-  },
-  waveWrapper2: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    height: 110,
-  },
-
-  /* ALT BEYAZ KART */
-  formCard: {
-    flex: 1,
-    marginTop: -50,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    padding: 20,
     alignItems: 'center',
+    borderBottomLeftRadius: CARD_RADIUS * 1.5,
+    borderBottomRightRadius: CARD_RADIUS * 1.5,
+  },
+  logo: { width: LOGO_SIZE, height: LOGO_SIZE, resizeMode: 'contain' },
+
+  /* card */
+  card: {
+    flex: 1,
     backgroundColor: '#fff',
-    // Gölge
+    marginTop: -CARD_RADIUS,
+    marginHorizontal: 24,
+    borderRadius: CARD_RADIUS,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  loginTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f7f7f7',
+    borderRadius: 16,
+    marginBottom: 16,
+    paddingHorizontal: 14,
+  },
+  leftIcon: { marginRight: 6 },
+  input: { flex: 1, height: 48, fontSize: 15, color: '#333' },
+  forgotWrapper: { alignSelf: 'flex-end', marginBottom: 16 },
+  forgotText: { fontSize: 13, color: '#ff6b6b' },
+  loginBtn: {
+    backgroundColor: '#ff6b6b',
+    borderRadius: 18,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  loginBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  bottomRow: { flexDirection: 'row', justifyContent: 'center' },
+  bottomText: { color: '#666' },
+  signupLink: { marginLeft: 4, color: '#ff6b6b', fontWeight: '600' },
+
+  /* modal */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 28,
+    padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.15,
     shadowRadius: 6,
-    elevation: 3,
+    elevation: 6,
   },
-  inputContainer: {
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#333', alignSelf: 'center', marginBottom: 18 },
+  modalInput: {
     width: '100%',
-    marginTop: 30,
+    backgroundColor: '#f7f7f7',
+    borderRadius: 16,
+    height: 48,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 14,
   },
-  iconInputWrapper: {
-    position: 'relative',
-    marginBottom: 15,
-  },
-  icon: {
-    position: 'absolute',
-    left: 15,
-    top: 15,
-    fontSize: 18,
-    zIndex: 2,
-  },
-  input: {
-    width: '100%',
-    backgroundColor: '#f2f2f2',
-    padding: 15,
-    borderRadius: 25,
-    fontSize: 16,
-  },
-  loginButton: {
-    width: '100%',
-    backgroundColor: '#f75c5b',
-    padding: 15,
-    borderRadius: 25,
+  modalBtn: {
+    backgroundColor: '#ff6b6b',
+    borderRadius: 18,
+    paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 4,
   },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  bottomText: {
-    flexDirection: 'row',
-    marginTop: 15,
-  },
-  signupText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  signupLinkBold: {
-    color: '#f75c5b',
-    fontWeight: 'bold',
-    fontSize: 14,
-    marginLeft: 4,
-  },
+  modalBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  modalClose: { position: 'absolute', top: 12, right: 12 },
 });
