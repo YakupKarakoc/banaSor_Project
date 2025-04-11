@@ -32,13 +32,38 @@ const HomeScreen = () => {
   const username = 'Yakup';
 
   const menuItems = [
-    { label: 'Üniversiteler', icon: 'school-outline', onPress: () => {} },
-    { label: 'Soru-Cevap', icon: 'chatbubbles-outline', onPress: () => {} },
-    { label: 'Topluluklar', icon: 'people-outline', onPress: () => {} },
-    { label: 'Favoriler', icon: 'star-outline', onPress: () => {} },
-    { label: 'Etkinlikler', icon: 'calendar-outline', onPress: () => {} },
-    { label: 'Mesajlar', icon: 'mail-outline', onPress: () => {} },
+    {
+      label: 'Üniversiteler',
+      icon: 'school-outline',
+      onPress: () => navigation.navigate('Universiteler'),
+    },
+    {
+      label: 'Soru-Cevap',
+      icon: 'chatbubbles-outline',
+      onPress: () => {},
+    },
+    {
+      label: 'Topluluklar',
+      icon: 'people-outline',
+      onPress: () => {},
+    },
+    {
+      label: 'Favoriler',
+      icon: 'star-outline',
+      onPress: () => {},
+    },
+    {
+      label: 'Etkinlikler',
+      icon: 'calendar-outline',
+      onPress: () => {},
+    },
+    {
+      label: 'Mesajlar',
+      icon: 'mail-outline',
+      onPress: () => {},
+    },
   ];
+  
 
   const handleLogout = () => {
     navigation.navigate('Login');
