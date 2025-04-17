@@ -1,8 +1,19 @@
+// src/screens/LoginScreen.js
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, Image, KeyboardAvoidingView,
-  Platform, TouchableWithoutFeedback, Keyboard, Animated, Pressable,
-  Alert, Modal
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Animated,
+  Pressable,
+  Alert,
+  Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -10,64 +21,81 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
 const LoginScreen = () => {
-  const navigation   = useNavigation();
+  const navigation = useNavigation();
+
+  // Login form
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
 
-  /* ---------- şifre sıfırlama state ---------- */
+  // Password-reset modal
   const [modalVisible, setModalVisible] = useState(false);
-  const [resetStep, setResetStep]       = useState(1); // 1: e‑posta, 2: kod+şifre
+  const [step, setStep]                 = useState(1);
   const [resetEmail, setResetEmail]     = useState('');
   const [resetCode, setResetCode]       = useState('');
   const [newPass, setNewPass]           = useState('');
 
-  /* ---------- animasyonlar ---------- */
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  // Animations
   const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1, duration: 600, useNativeDriver: true
+    }).start();
   }, []);
 
-  const onPressIn  = () => Animated.spring(scaleAnim, { toValue: 0.94, useNativeDriver: true }).start();
+  const onPressIn = () =>
+    Animated.spring(scaleAnim, { toValue: 0.94, useNativeDriver: true }).start();
   const onPressOut = () =>
     Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true })
       .start(handleLogin);
 
-  /* ---------- login ---------- */
+  // --- LOGIN ---
   const handleLogin = async () => {
     try {
       const r = await axios.post('http://10.0.2.2:3000/api/auth/login', {
-        email, sifre: password,
+        email, sifre: password
       });
-      if (r.data.error) return Alert.alert('Hata', r.data.error);
-      Alert.alert('Başarılı', 'Giriş yapıldı!');
-      navigation.navigate('Home');
+      if (r.data.error) {
+        return Alert.alert('Hata', r.data.error);
+      }
+
+      // Fallback: eğer r.data.user yoksa r.data içinden al
+      const userObj = r.data.user ?? r.data;
+      const ad      = userObj.ad    || userObj.name    || '';
+      const soyad   = userObj.soyad || userObj.surname || '';
+      const userName = ad + (soyad ? ' ' + soyad : '');
+
+      // Home'a replace ile geç, parametre olarak userName gönder
+      navigation.replace('Home', { userName });
+
     } catch (e) {
-      Alert.alert('Sunucu hatası', e.message);
+      Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
     }
   };
 
-  /* ---------- şifre sıfırlama – adım 1 ---------- */
+  // --- ŞİFRE SIFIRLAMA ADIM 1 ---
   const sendResetCode = async () => {
     try {
       await axios.post('http://10.0.2.2:3000/api/auth/forgotPassword', { email: resetEmail });
-      Alert.alert('Kod gönderildi', 'E‑posta kutunu kontrol et.');
-      setResetStep(2);
+      Alert.alert('Kod Gönderildi', 'E‑posta kutunu kontrol et.');
+      setStep(2);
     } catch (e) {
       Alert.alert('Hata', e.response?.data?.error || e.message);
     }
   };
 
-  /* ---------- şifre sıfırlama – adım 2 ---------- */
-  const resetPassword = async () => {
-    if (newPass.length < 6) return Alert.alert('Hata', 'Şifre en az 6 karakter olmalı.');
+  // --- ŞİFRE SIFIRLAMA ADIM 2 ---
+  const applyNewPassword = async () => {
+    if (newPass.length < 6) {
+      return Alert.alert('Hata', 'Yeni şifre en az 6 karakter olmalı.');
+    }
     try {
       await axios.post('http://10.0.2.2:3000/api/auth/resetPassword', {
         email: resetEmail,
         resetCode,
         newPassword: newPass,
       });
-      Alert.alert('Başarılı', 'Şifren güncellendi.');
+      Alert.alert('Başarılı', 'Şifre güncellendi.');
       closeModal();
     } catch (e) {
       Alert.alert('Hata', e.response?.data?.error || e.message);
@@ -76,134 +104,139 @@ const LoginScreen = () => {
 
   const closeModal = () => {
     setModalVisible(false);
-    setResetStep(1);
-    setResetEmail('');
-    setResetCode('');
-    setNewPass('');
+    setStep(1);
+    setResetEmail(''); setResetCode(''); setNewPass('');
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        {/* ---------- HEADER ---------- */}
-        <LinearGradient colors={['#ff6b6b', '#ff9f6b']} style={styles.headerBox}>
-          <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* HEADER */}
+        <LinearGradient
+          colors={['#FF8C00', '#FF3D00']}
+          style={styles.header}
+        >
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../assets/images/banaSor_logo.jpg')}
+              style={styles.logo}
+            />
+          </View>
+          <Text style={styles.welcome}>BanaSor’a Hoş Geldiniz!</Text>
         </LinearGradient>
 
-        {/* ---------- CARD ---------- */}
+        {/* CARD */}
         <Animated.View
           style={[
             styles.card,
             {
               opacity: fadeAnim,
-              transform: [
-                {
-                  translateY: fadeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [40, 0],
-                  }),
-                },
-              ],
-            },
-          ]}>
-          <Text style={styles.loginTitle}>Giriş Yap</Text>
+              transform: [{
+                translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] })
+              }]
+            }
+          ]}
+        >
+          <Text style={styles.title}>Giriş Yap</Text>
 
-          {/* email */}
-          <View style={styles.inputWrapper}>
-            <Icon name="mail-outline" size={20} color="#999" style={styles.leftIcon} />
+          <View style={styles.field}>
+            <Icon name="mail-outline" size={20} color="#AAA" style={styles.icon} />
             <TextInput
+              style={styles.input}
               placeholder="E‑posta"
-              placeholderTextColor="#999"
+              placeholderTextColor="#AAA"
               keyboardType="email-address"
+              autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
-              style={styles.input}
             />
           </View>
 
-          {/* password */}
-          <View style={styles.inputWrapper}>
-            <Icon name="lock-closed-outline" size={20} color="#999" style={styles.leftIcon} />
+          <View style={styles.field}>
+            <Icon name="lock-closed-outline" size={20} color="#AAA" style={styles.icon} />
             <TextInput
+              style={styles.input}
               placeholder="Şifre"
-              placeholderTextColor="#999"
+              placeholderTextColor="#AAA"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
-              style={styles.input}
             />
           </View>
 
-          {/* forgot */}
-          <Pressable onPress={() => setModalVisible(true)} style={styles.forgotWrapper}>
+          <Pressable style={styles.forgot} onPress={() => setModalVisible(true)}>
             <Text style={styles.forgotText}>Şifremi unuttum?</Text>
           </Pressable>
 
-          {/* login btn */}
-          <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
-            <Pressable onPressIn={onPressIn} onPressOut={onPressOut} style={styles.loginBtn}>
-              <Text style={styles.loginBtnText}>Giriş Yap</Text>
+          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+            <Pressable
+              onPressIn={onPressIn}
+              onPressOut={onPressOut}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Giriş Yap</Text>
             </Pressable>
           </Animated.View>
 
-          {/* bottom */}
-          <View style={styles.bottomRow}>
+          <View style={styles.bottom}>
             <Text style={styles.bottomText}>Hesabınız yok mu?</Text>
             <Pressable onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.signupLink}>Kayıt Ol</Text>
+              <Text style={styles.bottomLink}> Kayıt Ol</Text>
             </Pressable>
           </View>
         </Animated.View>
 
-        {/* ---------- Şifre Sıfırlama Modalı ---------- */}
-        <Modal visible={modalVisible} animationType="slide" transparent>
+        {/* PASSWORD RESET MODAL */}
+        <Modal visible={modalVisible} transparent animationType="slide">
           <View style={styles.modalBackdrop}>
             <View style={styles.modalCard}>
               <Text style={styles.modalTitle}>
-                {resetStep === 1 ? 'Kod Gönder' : 'Şifreyi Sıfırla'}
+                {step === 1 ? 'Şifre Sıfırlama' : 'Yeni Şifre Belirle'}
               </Text>
 
-              {resetStep === 1 ? (
+              {step === 1 ? (
                 <>
                   <TextInput
                     style={styles.modalInput}
-                    placeholder="E‑posta adresin"
-                    placeholderTextColor="#999"
+                    placeholder="E‑posta adresiniz"
+                    placeholderTextColor="#888"
                     keyboardType="email-address"
+                    autoCapitalize="none"
                     value={resetEmail}
                     onChangeText={setResetEmail}
                   />
                   <Pressable style={styles.modalBtn} onPress={sendResetCode}>
-                    <Text style={styles.modalBtnTxt}>Kodu Gönder</Text>
+                    <Text style={styles.modalBtnText}>Kod Gönder</Text>
                   </Pressable>
                 </>
               ) : (
                 <>
                   <TextInput
                     style={styles.modalInput}
-                    placeholder="Doğrulama Kodu"
-                    placeholderTextColor="#999"
+                    placeholder="Aldığınız kod"
+                    placeholderTextColor="#888"
                     value={resetCode}
                     onChangeText={setResetCode}
                   />
                   <TextInput
                     style={styles.modalInput}
                     placeholder="Yeni Şifre"
-                    placeholderTextColor="#999"
+                    placeholderTextColor="#888"
                     secureTextEntry
                     value={newPass}
                     onChangeText={setNewPass}
                   />
-                  <Pressable style={styles.modalBtn} onPress={resetPassword}>
-                    <Text style={styles.modalBtnTxt}>Şifreyi Güncelle</Text>
+                  <Pressable style={styles.modalBtn} onPress={applyNewPassword}>
+                    <Text style={styles.modalBtnText}>Şifreyi Güncelle</Text>
                   </Pressable>
                 </>
               )}
 
-              <Pressable onPress={closeModal} style={styles.modalClose}>
-                <Icon name="close" size={24} color="#666" />
+              <Pressable style={styles.modalClose} onPress={closeModal}>
+                <Icon name="close-circle" size={28} color="#444" />
               </Pressable>
             </View>
           </View>
@@ -215,102 +248,134 @@ const LoginScreen = () => {
 
 export default LoginScreen;
 
-/* ---------- STYLES ---------- */
-const CARD_RADIUS = 38;
-const LOGO_SIZE = 140;
+// (styles kodları aynı kaldı)
+
+
+
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f1f1f1' },
-  headerBox: {
-    height: '36%',
+  container: { flex: 1, backgroundColor: '#F9F9F9' },
+
+  header: {
+    height: '35%',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderBottomLeftRadius: CARD_RADIUS * 1.5,
-    borderBottomRightRadius: CARD_RADIUS * 1.5,
+    paddingTop: 30,
   },
-  logo: { width: LOGO_SIZE, height: LOGO_SIZE, resizeMode: 'contain' },
+  logoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    marginBottom: 12,
+  },
+  logo: { width: 80, height: 80, resizeMode: 'contain' },
+  welcome: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFF',
+  },
 
-  /* card */
   card: {
     flex: 1,
-    backgroundColor: '#fff',
-    marginTop: -CARD_RADIUS,
+    backgroundColor: '#FFF',
     marginHorizontal: 24,
-    borderRadius: CARD_RADIUS,
-    padding: 24,
+    marginTop: -30,
+    borderRadius: 30,
+    padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 5,
+    shadowRadius: 6,
     elevation: 4,
   },
-  loginTitle: {
-    fontSize: 24,
+  title: {
+    fontSize: 22,
     fontWeight: '600',
     color: '#333',
-    alignSelf: 'center',
-    marginBottom: 24,
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  inputWrapper: {
+
+  field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f7f7f7',
-    borderRadius: 16,
-    marginBottom: 16,
-    paddingHorizontal: 14,
+    backgroundColor: '#EFEFEF',
+    borderRadius: 20,
+    height: 50,
+    marginBottom: 15,
+    paddingLeft: 50,
   },
-  leftIcon: { marginRight: 6 },
-  input: { flex: 1, height: 48, fontSize: 15, color: '#333' },
-  forgotWrapper: { alignSelf: 'flex-end', marginBottom: 16 },
-  forgotText: { fontSize: 13, color: '#ff6b6b' },
-  loginBtn: {
-    backgroundColor: '#ff6b6b',
-    borderRadius: 18,
+  icon: { position: 'absolute', left: 15 },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    height: '100%',
+  },
+
+  forgot: { alignSelf: 'flex-end', marginBottom: 10 },
+  forgotText: { color: '#FF3D00', fontWeight: '500' },
+
+  button: {
+    backgroundColor: '#FF3D00',
+    borderRadius: 25,
     paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  loginBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  bottomRow: { flexDirection: 'row', justifyContent: 'center' },
-  bottomText: { color: '#666' },
-  signupLink: { marginLeft: 4, color: '#ff6b6b', fontWeight: '600' },
+  buttonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
 
-  /* modal */
+  bottom: { flexDirection: 'row', justifyContent: 'center' },
+  bottomText: { color: '#666' },
+  bottomLink: { color: '#FF3D00', fontWeight: '600' },
+
+  /* Modal */
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCard: {
     width: '85%',
-    backgroundColor: '#fff',
-    borderRadius: 28,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 6,
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 20,
+    position: 'relative',
   },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#333', alignSelf: 'center', marginBottom: 18 },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
   modalInput: {
     width: '100%',
-    backgroundColor: '#f7f7f7',
+    backgroundColor: '#F0F0F0',
     borderRadius: 16,
     height: 48,
     paddingHorizontal: 16,
     fontSize: 15,
     color: '#333',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   modalBtn: {
-    backgroundColor: '#ff6b6b',
-    borderRadius: 18,
-    paddingVertical: 14,
+    backgroundColor: '#FF3D00',
+    borderRadius: 20,
+    paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 4,
   },
-  modalBtnTxt: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  modalClose: { position: 'absolute', top: 12, right: 12 },
+  modalBtnText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
+  modalClose: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+  },
 });

@@ -1,88 +1,147 @@
-import React, { useState } from 'react';
+// src/screens/UniversiteDetay.js
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useRoute } from '@react-navigation/native';
+import axios from 'axios';
 
 const UniversiteDetay = () => {
   const route = useRoute();
   const { universite } = route.params;
+  const uniId = universite.universiteid;
 
-  const [isFollowed, setIsFollowed] = useState(false);
+  const [faculties, setFaculties] = useState([]);
+  const [expanded, setExpanded] = useState({});
+  const [departments, setDepartments] = useState({});
+  const [loadingFac, setLoadingFac] = useState(true);
+  const [loadingDeps, setLoadingDeps] = useState({});
+
+  // Fakülteleri çek
+  useEffect(() => {
+    axios
+      .get('http://10.0.2.2:3000/api/education/faculty', {
+        params: { universiteId: uniId, aktifMi: true },
+      })
+      .then((res) => setFaculties(res.data))
+      .catch(console.error)
+      .finally(() => setLoadingFac(false));
+  }, [uniId]);
+
+  // Accordion aç-kapa ve bölümler için API çağrısı
+  const toggleFaculty = (fakulteId) => {
+    setExpanded((prev) => {
+      const nowOpen = !prev[fakulteId];
+
+      if (nowOpen && !departments[fakulteId]) {
+        // Bölümleri çağır
+        setLoadingDeps((ld) => ({ ...ld, [fakulteId]: true }));
+        axios
+          .get('http://10.0.2.2:3000/api/education/department', {
+            params: {
+              universiteId: uniId,
+              fakulteId,
+              aktifMi: true,
+            },
+          })
+          .then((res) =>
+            setDepartments((d) => ({ ...d, [fakulteId]: res.data }))
+          )
+          .catch(console.error)
+          .finally(() =>
+            setLoadingDeps((ld) => ({ ...ld, [fakulteId]: false }))
+          );
+      }
+
+      return { ...prev, [fakulteId]: nowOpen };
+    });
+  };
 
   return (
-    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
+    <LinearGradient
+      colors={['#f75c5b', '#ff8a5c']}
+      style={styles.container}
+    >
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Başlık */}
+        <Text style={styles.title}>{universite.universiteadi}</Text>
+        <Text style={styles.subTitle}>Şehir: {universite.sehiradi}</Text>
 
-        <Text style={styles.uniIsmi}>{universite.name}</Text>
-        <Text style={styles.sehir}>{universite.city}</Text>
-
-        {/* İstatistik kutusu */}
-        <View style={styles.statBox}>
-          <Text style={styles.statText}>👥 {universite.followers} takipçi</Text>
-          <Text style={styles.statText}>⭐ {universite.rating} puan</Text>
-          <TouchableOpacity
-            style={[styles.followButton, isFollowed && styles.followed]}
-            onPress={() => setIsFollowed(!isFollowed)}
-          >
-            <Text style={[styles.followText, isFollowed && styles.followedText]}>
-              {isFollowed ? 'Takip Ediliyor' : 'Takip Et'}
+        {/* İstatistik */}
+        <View style={styles.statsRow}>
+          <View style={styles.stat}>
+            <Ionicons name="star" size={18} color="#fff" />
+            <Text style={styles.statText}>
+              {' '}
+              {universite.puan ?? '-'} puan
             </Text>
-          </TouchableOpacity>
+          </View>
+          <View style={styles.stat}>
+            <Ionicons name="people" size={18} color="#fff" />
+            <Text style={styles.statText}>
+              {' '}
+              {universite.takipciSayisi ?? '-'} takipçi
+            </Text>
+          </View>
         </View>
 
-        {/* Hakkında */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hakkında</Text>
-          <Text style={styles.desc}>
-            Bu üniversite hakkında genel bir açıklama verisi daha sonra backend'den alınacaktır.
-          </Text>
-        </View>
+        {/* Accordion */}
+        <Text style={styles.sectionTitle}>Fakülteler & Bölümler</Text>
+        {loadingFac ? (
+          <ActivityIndicator color="#fff" size="large" />
+        ) : (
+          faculties.map((fakulte) => {
+            const fid = fakulte.fakulteid;
+            const isOpen = !!expanded[fid];
 
-        {/* Bölümler */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Bölümler</Text>
-          {['Bilgisayar Müh.', 'Elektrik-Elektronik', 'Makine Müh.'].map((bolum, i) => (
-            <View key={i} style={styles.subCard}>
-              <Ionicons name="school-outline" size={18} color="#f75c5b" style={{ marginRight: 8 }} />
-              <Text style={styles.item}>{bolum}</Text>
-            </View>
-          ))}
-        </View>
+            return (
+              <View key={fid} style={styles.accordion}>
+                <TouchableOpacity
+                  style={styles.header}
+                  onPress={() => toggleFaculty(fid)}
+                >
+                  <Ionicons
+                    name="school-outline"
+                    size={20}
+                    color="#fff"
+                  />
+                  <Text style={styles.headerText}>
+                    {fakulte.fakulteadi}
+                  </Text>
+                  <Ionicons
+                    name={isOpen ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color="#fff"
+                  />
+                </TouchableOpacity>
 
-        {/* Etkinlikler */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Etkinlikler / Topluluklar</Text>
-          {['Kariyer Günleri', 'Robotik Kulübü'].map((etkinlik, i) => (
-            <View key={i} style={styles.subCard}>
-              <Ionicons name="rocket-outline" size={18} color="#f75c5b" style={{ marginRight: 8 }} />
-              <Text style={styles.item}>{etkinlik}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Üyeler */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mezunlar / Üyeler</Text>
-          {['Ayşe K.', 'Mehmet Y.', 'Zeynep T.'].map((uye, i) => (
-            <View key={i} style={styles.subCard}>
-              <Ionicons name="person-circle-outline" size={18} color="#f75c5b" style={{ marginRight: 8 }} />
-              <Text style={styles.item}>{uye}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Soru-Cevap */}
-        <TouchableOpacity style={styles.askButton}>
-          <Ionicons name="chatbubble-ellipses-outline" size={20} color="#fff" />
-          <Text style={styles.askText}>Bu üniversite hakkında soru sor</Text>
-        </TouchableOpacity>
+                {isOpen && (
+                  <View style={styles.body}>
+                    {loadingDeps[fid] ? (
+                      <ActivityIndicator color="#f75c5b" />
+                    ) : (
+                      (departments[fid] || []).map((bolum) => (
+                        <Text
+                          key={bolum.bolumid}
+                          style={styles.department}
+                        >
+                          • {bolum.bolumadi}
+                        </Text>
+                      ))
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })
+        )}
       </ScrollView>
     </LinearGradient>
   );
@@ -93,86 +152,58 @@ export default UniversiteDetay;
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20 },
-  uniIsmi: {
+  title: {
+    color: '#fff',
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 2,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 4,
   },
-  sehir: {
+  subTitle: {
+    color: '#fff',
     fontSize: 16,
-    color: '#fff',
-    marginBottom: 14,
-  },
-  statBox: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
+    textAlign: 'center',
     marginBottom: 16,
+  },
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    marginBottom: 20,
   },
-  statText: {
-    fontSize: 14,
-    color: '#f75c5b',
-    fontWeight: 'bold',
-  },
-  followButton: {
-    backgroundColor: '#f75c5b',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  followText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  followed: {
-    backgroundColor: '#ccc',
-  },
-  followedText: {
-    color: '#333',
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
+  stat: { flexDirection: 'row', alignItems: 'center' },
+  statText: { color: '#fff', fontSize: 14 },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#f75c5b',
-    marginBottom: 8,
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
   },
-  desc: {
+  accordion: {
+    marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  headerText: {
+    color: '#fff',
+    fontSize: 16,
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  body: {
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  department: {
     fontSize: 14,
     color: '#333',
-    lineHeight: 20,
-  },
-  subCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  item: {
-    fontSize: 14,
-    color: '#444',
-  },
-  askButton: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    marginBottom: 40,
-  },
-  askText: {
-    fontWeight: 'bold',
-    color: '#f75c5b',
-    fontSize: 15,
+    paddingVertical: 4,
   },
 });

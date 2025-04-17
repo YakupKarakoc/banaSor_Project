@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+// src/screens/Home.js
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  TextInput,
+  TextInput,           // ← bunu mutlaka ekleyin
   TouchableOpacity,
   Image,
   ScrollView,
-  Animated
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -17,10 +18,9 @@ import * as Animatable from 'react-native-animatable';
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [searchValue, setSearchValue] = useState('');
-  
-  // Animasyon Değerleri
-  const fadeAnim = new Animated.Value(0);
-  
+
+  // Animasyon için ref
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -29,8 +29,10 @@ const HomeScreen = () => {
     }).start();
   }, []);
 
-  const username = 'Yakup';
+  // Örnek kullanıcı adı
+  const username = 'Yakup'; // Bu değeri login'den gelen parametreyle değiştirin
 
+  // Menü öğeleri
   const menuItems = [
     {
       label: 'Üniversiteler',
@@ -63,16 +65,14 @@ const HomeScreen = () => {
       onPress: () => {},
     },
   ];
-  
 
   const handleLogout = () => {
-    navigation.navigate('Login');
+    navigation.replace('Login');
   };
 
   return (
     <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.gradientContainer}>
-      
-      {/* Üst Kısım */}
+      {/* HEADER */}
       <Animatable.View animation="fadeInDown" duration={800} style={styles.header}>
         <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
         <View style={styles.headerText}>
@@ -84,10 +84,9 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </Animatable.View>
 
-      {/* Ana İçerik */}
+      {/* CONTENT */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* Arama Kutusu */}
+        {/* ARAMA */}
         <Animatable.View animation="fadeInUp" duration={800} delay={200} style={styles.searchContainer}>
           <Ionicons name="search-outline" size={20} color="#777" style={styles.searchIcon} />
           <TextInput
@@ -99,7 +98,7 @@ const HomeScreen = () => {
           />
         </Animatable.View>
 
-        {/* Menü */}
+        {/* MENÜ */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
             <Animatable.View key={index} animation="fadeInUp" duration={600} delay={index * 100}>
@@ -111,7 +110,7 @@ const HomeScreen = () => {
           ))}
         </View>
 
-        {/* Çıkış Butonu */}
+        {/* ÇIKIŞ */}
         <Animatable.View animation="pulse" iterationCount="infinite" duration={3000}>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
@@ -125,7 +124,6 @@ const HomeScreen = () => {
 
 export default HomeScreen;
 
-/* ------------------- STYLES ------------------- */
 const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
@@ -170,10 +168,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
     elevation: 2,
   },
   searchIcon: {
