@@ -1,38 +1,38 @@
-// src/screens/Home.js
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  TextInput,           // ← bunu mutlaka ekleyin
+  TextInput,
   TouchableOpacity,
   Image,
   ScrollView,
   Animated,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  console.log('Gelen user:', route.params?.user);
+
   const [searchValue, setSearchValue] = useState('');
-
-  // Animasyon için ref
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Kullanıcıyı state olarak sakla
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+    if (route.params?.user) {
+      setUser(route.params.user);
+    }
+  }, [route.params?.user]);
 
-  // Örnek kullanıcı adı
-  const username = 'Yakup'; // Bu değeri login'den gelen parametreyle değiştirin
+  const username = user?.kullaniciadi || 'Kullanıcı';
 
-  // Menü öğeleri
   const menuItems = [
     {
       label: 'Üniversiteler',
@@ -72,21 +72,21 @@ const HomeScreen = () => {
 
   return (
     <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.gradientContainer}>
-      {/* HEADER */}
       <Animatable.View animation="fadeInDown" duration={800} style={styles.header}>
         <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
         <View style={styles.headerText}>
           <Text style={styles.welcomeText}>Hoş Geldin,</Text>
           <Text style={styles.usernameText}>{username}!</Text>
         </View>
-        <TouchableOpacity style={styles.profileIconWrapper} onPress={() => navigation.navigate('Profile')}>
+        <TouchableOpacity
+          style={styles.profileIconWrapper}
+          onPress={() => navigation.navigate('Profile', { user })}
+        >
           <Ionicons name="person-circle-outline" size={42} color="#fff" />
         </TouchableOpacity>
       </Animatable.View>
 
-      {/* CONTENT */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* ARAMA */}
         <Animatable.View animation="fadeInUp" duration={800} delay={200} style={styles.searchContainer}>
           <Ionicons name="search-outline" size={20} color="#777" style={styles.searchIcon} />
           <TextInput
@@ -98,7 +98,6 @@ const HomeScreen = () => {
           />
         </Animatable.View>
 
-        {/* MENÜ */}
         <View style={styles.menuContainer}>
           {menuItems.map((item, index) => (
             <Animatable.View key={index} animation="fadeInUp" duration={600} delay={index * 100}>
@@ -110,7 +109,6 @@ const HomeScreen = () => {
           ))}
         </View>
 
-        {/* ÇIKIŞ */}
         <Animatable.View animation="pulse" iterationCount="infinite" duration={3000}>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
@@ -123,6 +121,8 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
+
+// styles kısmın zaten doğru, o kısmı değiştirmene gerek yok
 
 const styles = StyleSheet.create({
   gradientContainer: {

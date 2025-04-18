@@ -50,28 +50,29 @@ const LoginScreen = () => {
       .start(handleLogin);
 
   // --- LOGIN ---
-  const handleLogin = async () => {
-    try {
-      const r = await axios.post('http://10.0.2.2:3000/api/auth/login', {
-        email, sifre: password
-      });
-      if (r.data.error) {
-        return Alert.alert('Hata', r.data.error);
-      }
+  // --- LOGIN ---
+const handleLogin = async () => {
+  try {
+    const r = await axios.post('http://10.0.2.2:3000/api/auth/login', {
+      email,
+      sifre: password,
+    });
 
-      // Fallback: eğer r.data.user yoksa r.data içinden al
-      const userObj = r.data.user ?? r.data;
-      const ad      = userObj.ad    || userObj.name    || '';
-      const soyad   = userObj.soyad || userObj.surname || '';
-      const userName = ad + (soyad ? ' ' + soyad : '');
-
-      // Home'a replace ile geç, parametre olarak userName gönder
-      navigation.replace('Home', { userName });
-
-    } catch (e) {
-      Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
+    if (r.data.error) {
+      return Alert.alert('Hata', r.data.error);
     }
-  };
+    console.log('Giriş başarılı, userObj:', userObj);
+
+    const userObj = r.data.user ?? r.data;
+
+    // ✅ Giriş yapan kullanıcıyı doğrudan parametre olarak gönder
+    navigation.replace('Home', { user: userObj });
+
+  } catch (e) {
+    Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
+  }
+};
+
 
   // --- ŞİFRE SIFIRLAMA ADIM 1 ---
   const sendResetCode = async () => {

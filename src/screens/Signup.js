@@ -62,7 +62,7 @@ const SignupScreen = () => {
     if (password !== confirmPassword) {
       return Alert.alert('Hata', 'Şifreler eşleşmiyor!');
     }
-    const turuId = role === 'aday' ? 0 : role === 'ogrenci' ? 1 : 2;
+    const turuId = role === 'aday' ? 1 : role === 'ogrenci' ? 2 : 3;
     try {
       const { data } = await axios.post(
         'http://10.0.2.2:3000/api/auth/register',

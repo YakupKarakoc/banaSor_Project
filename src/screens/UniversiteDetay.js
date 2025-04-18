@@ -1,4 +1,3 @@
-// src/screens/UniversiteDetay.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -23,8 +22,8 @@ const UniversiteDetay = () => {
   const [departments, setDepartments] = useState({});
   const [loadingFac, setLoadingFac] = useState(true);
   const [loadingDeps, setLoadingDeps] = useState({});
+  const [showFaculties, setShowFaculties] = useState(false);
 
-  // Fakülteleri çek
   useEffect(() => {
     axios
       .get('http://10.0.2.2:3000/api/education/faculty', {
@@ -35,13 +34,10 @@ const UniversiteDetay = () => {
       .finally(() => setLoadingFac(false));
   }, [uniId]);
 
-  // Accordion aç-kapa ve bölümler için API çağrısı
   const toggleFaculty = (fakulteId) => {
     setExpanded((prev) => {
       const nowOpen = !prev[fakulteId];
-
       if (nowOpen && !departments[fakulteId]) {
-        // Bölümleri çağır
         setLoadingDeps((ld) => ({ ...ld, [fakulteId]: true }));
         axios
           .get('http://10.0.2.2:3000/api/education/department', {
@@ -59,88 +55,89 @@ const UniversiteDetay = () => {
             setLoadingDeps((ld) => ({ ...ld, [fakulteId]: false }))
           );
       }
-
       return { ...prev, [fakulteId]: nowOpen };
     });
   };
 
   return (
-    <LinearGradient
-      colors={['#f75c5b', '#ff8a5c']}
-      style={styles.container}
-    >
+    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Başlık */}
         <Text style={styles.title}>{universite.universiteadi}</Text>
         <Text style={styles.subTitle}>Şehir: {universite.sehiradi}</Text>
 
-        {/* İstatistik */}
         <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Ionicons name="star" size={18} color="#fff" />
-            <Text style={styles.statText}>
-              {' '}
-              {universite.puan ?? '-'} puan
-            </Text>
+          <View style={styles.stat}><Ionicons name="star" size={18} color="#fff" />
+            <Text style={styles.statText}> {universite.puan ?? '-'} puan</Text>
           </View>
-          <View style={styles.stat}>
-            <Ionicons name="people" size={18} color="#fff" />
-            <Text style={styles.statText}>
-              {' '}
-              {universite.takipciSayisi ?? '-'} takipçi
-            </Text>
+          <View style={styles.stat}><Ionicons name="people" size={18} color="#fff" />
+            <Text style={styles.statText}> {universite.takipciSayisi ?? '-'} takipçi</Text>
           </View>
         </View>
 
-        {/* Accordion */}
-        <Text style={styles.sectionTitle}>Fakülteler & Bölümler</Text>
-        {loadingFac ? (
-          <ActivityIndicator color="#fff" size="large" />
-        ) : (
-          faculties.map((fakulte) => {
-            const fid = fakulte.fakulteid;
-            const isOpen = !!expanded[fid];
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>📢 Son Duyurular</Text>
+          <Text style={styles.cardItem}>• Bahar şenlikleri 24 Nisan’da başlıyor!</Text>
+          <Text style={styles.cardItem}>• Yüz yüze eğitime geçiş duyurusu yayımlandı.</Text>
+        </View>
 
-            return (
-              <View key={fid} style={styles.accordion}>
-                <TouchableOpacity
-                  style={styles.header}
-                  onPress={() => toggleFaculty(fid)}
-                >
-                  <Ionicons
-                    name="school-outline"
-                    size={20}
-                    color="#fff"
-                  />
-                  <Text style={styles.headerText}>
-                    {fakulte.fakulteadi}
-                  </Text>
-                  <Ionicons
-                    name={isOpen ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color="#fff"
-                  />
-                </TouchableOpacity>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>💬 Forum Örnekleri</Text>
+          <Text style={styles.cardItem}>Q: Hazırlık sınıfı zor mu? 🔍</Text>
+          <Text style={styles.cardItem}>A: Hocalar destek oluyor, ama bireysel çalışma önemli.</Text>
+        </View>
 
-                {isOpen && (
-                  <View style={styles.body}>
-                    {loadingDeps[fid] ? (
-                      <ActivityIndicator color="#f75c5b" />
-                    ) : (
-                      (departments[fid] || []).map((bolum) => (
-                        <Text
-                          key={bolum.bolumid}
-                          style={styles.department}
-                        >
-                          • {bolum.bolumadi}
-                        </Text>
-                      ))
+        <TouchableOpacity
+          style={styles.toggleBtn}
+          onPress={() => setShowFaculties((prev) => !prev)}
+        >
+          <Text style={styles.toggleText}>🎓 Fakülteler</Text>
+        </TouchableOpacity>
+
+        {showFaculties && (
+          <View style={{ marginTop: 10 }}>
+            {loadingFac ? (
+              <ActivityIndicator color="#fff" size="large" />
+            ) : (
+              faculties.map((fakulte) => {
+                const fid = fakulte.fakulteid;
+                const isOpen = !!expanded[fid];
+
+                return (
+                  <View key={fid} style={styles.accordion}>
+                    <TouchableOpacity
+                      style={styles.header}
+                      onPress={() => toggleFaculty(fid)}
+                    >
+                      <Ionicons name="school-outline" size={20} color="#fff" />
+                      <Text style={styles.headerText}>{fakulte.fakulteadi}</Text>
+                      <Ionicons
+                        name={isOpen ? 'chevron-up' : 'chevron-down'}
+                        size={20}
+                        color="#fff"
+                      />
+                    </TouchableOpacity>
+
+                    {isOpen && (
+                      <View style={styles.body}>
+                        {loadingDeps[fid] ? (
+                          <ActivityIndicator color="#f75c5b" />
+                        ) : (
+                          (departments[fid] || []).map((bolum) => (
+                            <Text
+                              key={bolum.bolumid}
+                              style={styles.department}
+                            >
+                              • {bolum.bolumadi}
+                            </Text>
+                          ))
+                        )}
+                      </View>
                     )}
                   </View>
-                )}
-              </View>
-            );
-          })
+                );
+              })
+            )}
+          </View>
         )}
       </ScrollView>
     </LinearGradient>
@@ -153,57 +150,51 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20 },
   title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 4,
+    color: '#fff', fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 4,
   },
   subTitle: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 16,
+    color: '#fff', fontSize: 16, textAlign: 'center', marginBottom: 16,
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
+    flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20,
   },
   stat: { flexDirection: 'row', alignItems: 'center' },
   statText: { color: '#fff', fontSize: 14 },
-  sectionTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+  card: {
+    backgroundColor: '#fff', borderRadius: 14, padding: 14,
+    marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.1,
+    shadowRadius: 6, elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#f75c5b',
+  },
+  cardItem: {
+    fontSize: 14, color: '#444', marginBottom: 4,
+  },
+  toggleBtn: {
+    backgroundColor: '#fff', padding: 12, borderRadius: 10,
+    alignItems: 'center', marginVertical: 10,
+  },
+  toggleText: {
+    color: '#f75c5b', fontSize: 16, fontWeight: '600',
   },
   accordion: {
     marginBottom: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 8,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
+    flexDirection: 'row', alignItems: 'center', padding: 12,
   },
   headerText: {
-    color: '#fff',
-    fontSize: 16,
-    flex: 1,
-    marginHorizontal: 8,
+    color: '#fff', fontSize: 16, flex: 1, marginHorizontal: 8,
   },
   body: {
-    backgroundColor: '#fff',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderBottomLeftRadius: 8,
+    backgroundColor: '#fff', paddingVertical: 8,
+    paddingHorizontal: 12, borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
   },
   department: {
-    fontSize: 14,
-    color: '#333',
-    paddingVertical: 4,
+    fontSize: 14, color: '#333', paddingVertical: 4,
   },
 });

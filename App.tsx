@@ -8,6 +8,8 @@ import HomeScreen from './src/screens/Home';
 import VerifyScreen from './src/screens/VerifyScreen';
 import UniversiteDetay from './src/screens/UniversiteDetay';
 import UniversitelerListesi from './src/screens/UniversitelerListesi';
+import ProfileScreen from './src/screens/ProfileScreen';
+
 
 const Stack = createStackNavigator();
 
@@ -21,6 +23,8 @@ const App = () => {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Universiteler" component={UniversitelerListesi} />
         <Stack.Screen name="UniversiteDetay" component={UniversiteDetay} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
