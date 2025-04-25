@@ -1,3 +1,5 @@
+// src/screens/HomeScreen.js
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
@@ -17,21 +19,22 @@ import * as Animatable from 'react-native-animatable';
 const HomeScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  console.log('Gelen user:', route.params?.user);
-
   const [searchValue, setSearchValue] = useState('');
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Kullanıcıyı state olarak sakla
   const [user, setUser] = useState(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (route.params?.user) {
       setUser(route.params.user);
     }
-  }, [route.params?.user]);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, [route.params]);
 
-  const username = user?.kullaniciadi || 'Kullanıcı';
+  const username = user?.kullaniciadi || 'Misafir';
 
   const menuItems = [
     {
@@ -42,27 +45,27 @@ const HomeScreen = () => {
     {
       label: 'Soru-Cevap',
       icon: 'chatbubbles-outline',
-      onPress: () => {},
+      onPress: () => {}, // TODO
     },
     {
       label: 'Topluluklar',
       icon: 'people-outline',
-      onPress: () => {},
+      onPress: () => {}, // TODO
     },
     {
       label: 'Favoriler',
       icon: 'star-outline',
-      onPress: () => {},
-    },
-    {
-      label: 'Etkinlikler',
-      icon: 'calendar-outline',
-      onPress: () => {},
+      onPress: () => {}, // TODO
     },
     {
       label: 'Mesajlar',
       icon: 'mail-outline',
-      onPress: () => {},
+      onPress: () => {}, // TODO
+    },
+    {
+      label: 'Profilim',
+      icon: 'person-circle-outline',
+      onPress: () => navigation.navigate('Profile', { user }),
     },
   ];
 
@@ -78,10 +81,7 @@ const HomeScreen = () => {
           <Text style={styles.welcomeText}>Hoş Geldin,</Text>
           <Text style={styles.usernameText}>{username}!</Text>
         </View>
-        <TouchableOpacity
-          style={styles.profileIconWrapper}
-          onPress={() => navigation.navigate('Profile', { user })}
-        >
+        <TouchableOpacity style={styles.profileIconWrapper} onPress={() => navigation.navigate('Profile', { user })}>
           <Ionicons name="person-circle-outline" size={42} color="#fff" />
         </TouchableOpacity>
       </Animatable.View>
@@ -99,8 +99,8 @@ const HomeScreen = () => {
         </Animatable.View>
 
         <View style={styles.menuContainer}>
-          {menuItems.map((item, index) => (
-            <Animatable.View key={index} animation="fadeInUp" duration={600} delay={index * 100}>
+          {menuItems.map((item, idx) => (
+            <Animatable.View key={idx} animation="fadeInUp" duration={600} delay={idx * 100}>
               <TouchableOpacity style={styles.menuItem} onPress={item.onPress} activeOpacity={0.7}>
                 <Ionicons name={item.icon} size={24} color="#f75c5b" style={{ marginRight: 12 }} />
                 <Text style={styles.menuText}>{item.label}</Text>
@@ -122,12 +122,8 @@ const HomeScreen = () => {
 
 export default HomeScreen;
 
-// styles kısmın zaten doğru, o kısmı değiştirmene gerek yok
-
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
+  gradientContainer: { flex: 1 },
   header: {
     marginTop: 45,
     marginHorizontal: 20,
@@ -135,31 +131,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logo: {
-    borderRadius: 25,
-    width: 45,
-    height: 45,
-    resizeMode: 'contain',
-    marginRight: 10,
-  },
-  headerText: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  welcomeText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  usernameText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-  },
+  logo: { borderRadius: 25, width: 45, height: 45, resizeMode: 'contain', marginRight: 10 },
+  headerText: { flex: 1, justifyContent: 'center' },
+  welcomeText: { color: '#fff', fontSize: 14 },
+  usernameText: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 2 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -170,17 +146,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     elevation: 2,
   },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  menuContainer: {
-    marginBottom: 20,
-  },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 16, color: '#333' },
+  menuContainer: { marginBottom: 20 },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,11 +158,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     elevation: 2,
   },
-  menuText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
+  menuText: { fontSize: 16, fontWeight: 'bold', color: '#333' },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -204,9 +168,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     elevation: 2,
   },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
+  logoutText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
 });

@@ -4,16 +4,16 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import Login from './src/screens/Login';
 import SignupScreen from './src/screens/Signup';
-import HomeScreen from './src/screens/Home';
 import VerifyScreen from './src/screens/VerifyScreen';
-import UniversiteDetay from './src/screens/UniversiteDetay';
+import HomeScreen from './src/screens/Home';
 import UniversitelerListesi from './src/screens/UniversitelerListesi';
+import UniversiteDetay from './src/screens/UniversiteDetay';
+import Favoriler from './src/screens/Favoriler';
 import ProfileScreen from './src/screens/ProfileScreen';
-
 
 const Stack = createStackNavigator();
 
-const App = () => {
+export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -23,11 +23,9 @@ const App = () => {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Universiteler" component={UniversitelerListesi} />
         <Stack.Screen name="UniversiteDetay" component={UniversiteDetay} />
+        <Stack.Screen name="Favoriler" component={Favoriler} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
-
       </Stack.Navigator>
     </NavigationContainer>
   );
-};
-
-export default App;
+}
