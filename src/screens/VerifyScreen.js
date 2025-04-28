@@ -1,104 +1,126 @@
+// src/screens/VerifyScreen.js
+
 import React, { useState } from 'react';
-import { 
-  StyleSheet,
-  Text,
+import {
   View,
+  Text,
   TextInput,
   TouchableOpacity,
-  Alert
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import axios from 'axios';
+import LinearGradient from 'react-native-linear-gradient';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
-const VerifyScreen = () => {
-  const route = useRoute();
+const BASE_URL = 'http://10.0.2.2:3000';
+
+export default function VerifyScreen() {
+  const { params } = useRoute();
+  const { kullaniciId, email, role, username } = params;
   const navigation = useNavigation();
-  const { kullaniciId, email } = route.params; // Kayıttan geliyor
 
   const [kod, setKod] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleVerify = async () => {
+    if (!kod.trim()) {
+      return Alert.alert('Hata', 'Lütfen kodu girin.');
+    }
+    setLoading(true);
     try {
-      const res = await axios.post('http://10.0.2.2:3000/api/auth/verifyCode', {
+      await axios.post(`${BASE_URL}/api/auth/verifyCode`, {
         kullaniciId,
-        kod
+        kod,                            // backend expects `kod`, not `code`
       });
 
-      if (res.data.error) {
-        Alert.alert('Hata', res.data.error);
-        return;
+      // Rol bazlı yönlendirme
+      if (role === 'aday') {
+        Alert.alert('Başarılı', 'Hesabınız doğrulandı.', [
+          { text: 'Tamam', onPress: () => navigation.replace('Login') },
+        ]);
+      } else if (role === 'ogrenci') {
+        navigation.replace('StudentComplete', { email });
+      } else {
+        navigation.replace('GraduateComplete', { email, username });
       }
-      Alert.alert('Başarılı', 'E-posta doğrulandı!');
-      navigation.navigate('Login');
-    } catch (error) {
-      Alert.alert('Sunucu Hatası', error.message);
+    } catch (e) {
+      Alert.alert('Hata', e.response?.data?.error || 'Doğrulama başarısız.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>E-posta Doğrulama</Text>
-      <Text style={styles.infoText}>
-        {email} adresine gönderilen kodu giriniz:
-      </Text>
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
 
+  return (
+    <LinearGradient colors={['#FF8C00', '#FF3D00']} style={styles.container}>
+      <Text style={styles.title}>Mail Doğrulama</Text>
+      <Text style={styles.info}>{email} adresine gönderilen kodu girin.</Text>
       <TextInput
         style={styles.input}
         placeholder="Doğrulama Kodu"
+        placeholderTextColor="#999"
+        keyboardType="number-pad"
         value={kod}
         onChangeText={setKod}
-        placeholderTextColor="#999"
       />
-
-      <TouchableOpacity style={styles.verifyButton} onPress={handleVerify}>
-        <Text style={styles.verifyButtonText}>Onayla</Text>
+      <TouchableOpacity style={styles.button} onPress={handleVerify}>
+        <Text style={styles.btnText}>Doğrula</Text>
       </TouchableOpacity>
-    </View>
+    </LinearGradient>
   );
-};
-
-export default VerifyScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
+    justifyContent: 'center',
+    backgroundColor: '#FF3D00',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333'
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
+    color: '#fff',
     textAlign: 'center',
+    marginBottom: 12,
+  },
+  info: {
+    fontSize: 14,
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   input: {
-    backgroundColor: '#f8f8f8',
-    padding: 15,
-    borderRadius: 25,
-    width: '100%',
-    textAlign: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
     marginBottom: 20,
     fontSize: 16,
-    color: '#333',
   },
-  verifyButton: {
-    backgroundColor: '#f75c5b',
-    padding: 15,
+  button: {
+    backgroundColor: '#fff',
     borderRadius: 25,
-    width: '100%',
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  verifyButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  btnText: {
+    color: '#FF3D00',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FF3D00',
   },
 });

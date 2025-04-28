@@ -1,0 +1,108 @@
+// src/screens/StudentComplete.js
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, StyleSheet, Alert,
+  TouchableOpacity, ActivityIndicator,
+  TextInput, ScrollView
+} from 'react-native';
+import axios from 'axios';
+import { Picker } from '@react-native-picker/picker';
+import LinearGradient from 'react-native-linear-gradient';
+
+const BASE_URL = 'http://10.0.2.2:3000';
+
+export default function StudentComplete({ route, navigation }) {
+  const { email } = route.params;
+  const [unis, setUnis] = useState([]);
+  const [depts, setDepts] = useState([]);
+  const [selUni, setSelUni] = useState('');
+  const [selDept, setSelDept] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    axios.get(`${BASE_URL}/api/education/university`)
+      .then(r => setUnis(r.data))
+      .catch(() => Alert.alert('Hata','Üniversiteler yüklenemedi'));
+  }, []);
+
+  useEffect(() => {
+    if (!selUni) return setDepts([]), setSelDept('');
+    axios.get(`${BASE_URL}/api/education/department`, { params:{ universiteId: selUni }})
+      .then(r => setDepts(r.data))
+      .catch(() => Alert.alert('Hata','Bölümler yüklenemedi'));
+  }, [selUni]);
+
+  const submit = async () => {
+    if (!selUni || !selDept) {
+      return Alert.alert('Hata','Üniversite ve bölüm seçin.');
+    }
+    setLoading(true);
+    try {
+      await axios.post(`${BASE_URL}/api/ogrenci/kayit`, {
+        email,
+        universiteId: selUni,
+        bolumId: selDept,
+      });
+      Alert.alert('Başarılı','Öğrenci kaydı tamamlandı.', [
+        { text:'Tamam', onPress: ()=>navigation.replace('Login') }
+      ]);
+    } catch (e) {
+      Alert.alert('Hata', e.response?.data?.error || 'Kaydetme başarısız.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#fff"/>
+      </View>
+    );
+  }
+
+  return (
+    <LinearGradient colors={['#FF8C00','#FF3D00']} style={styles.container}>
+      <ScrollView contentContainerStyle={styles.inner}>
+        <Text style={styles.title}>Öğrenci Kaydı</Text>
+        <Text style={styles.info}>{email} ile devam ediliyor.</Text>
+
+        <Text style={styles.label}>Üniversite</Text>
+        <View style={styles.pickerBox}>
+          <Picker selectedValue={selUni} onValueChange={setSelUni}>
+            <Picker.Item label="Seçin..." value=""/>
+            {unis.map(u =>
+              <Picker.Item key={u.universiteid} label={u.universiteadi} value={u.universiteid}/>
+            )}
+          </Picker>
+        </View>
+
+        <Text style={styles.label}>Bölüm</Text>
+        <View style={styles.pickerBox}>
+          <Picker selectedValue={selDept} onValueChange={setSelDept}>
+            <Picker.Item label="Seçin..." value=""/>
+            {depts.map(d =>
+              <Picker.Item key={d.bolumid} label={d.bolumadi} value={d.bolumid}/>
+            )}
+          </Picker>
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={submit}>
+          <Text style={styles.btnText}>Kaydı Tamamla</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  container:{ flex:1 },
+  loader:{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#FF3D00' },
+  inner:{ padding:20 },
+  title:{ fontSize:22, fontWeight:'bold', color:'#fff', textAlign:'center', marginBottom:8 },
+  info: { fontSize:14, color:'#fff', textAlign:'center', marginBottom:20 },
+  label:{ color:'#fff', marginBottom:6 },
+  pickerBox:{ backgroundColor:'#fff', borderRadius:8, marginBottom:12, overflow:'hidden' },
+  button:{ backgroundColor:'#fff', borderRadius:25, paddingVertical:14, alignItems:'center', marginTop:10 },
+  btnText:{ color:'#FF3D00', fontWeight:'600', fontSize:16 },
+});
