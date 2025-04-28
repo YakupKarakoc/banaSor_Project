@@ -1,3 +1,5 @@
+// src/screens/UniversitelerListesi.js
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -25,41 +27,66 @@ const UniversitelerListesi = () => {
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCity, setSelectedCity] = useState('Tümü');
-  const [followMap, setFollowMap] = useState({});     // { [uniId]: boolean }
-  const [countMap, setCountMap] = useState({});       // { [uniId]: number }
+
+  // takip durum ve sayı haritaları
+  const [followMap, setFollowMap] = useState({}); // { [uniId]: boolean }
+  const [countMap, setCountMap]   = useState({}); // { [uniId]: number }
+
   const [loading, setLoading] = useState(true);
 
-  // normalize fonksiyonu aynen sizin
-  const normalize = text => /* ... */ text; // (uzun, kısalttım)
+  // Türkçe karakterleri normalize etmek için
+  const normalize = (text) =>
+    text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/ı/g, 'i')
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c');
 
-  // Başlangıçta şehir + üniversite + takip durum + sayıyı yükle
+  // Şehirler, üniversiteler, takip durum ve takipçi sayıları yükle
   useEffect(() => {
     (async () => {
       try {
+        // 1) şehir + üniversite verisini al
         const [cityRes, uniRes] = await Promise.all([
           axios.get(`${BASE_URL}/api/education/city`),
           axios.get(`${BASE_URL}/api/education/university`),
         ]);
-        setCities(['Tümü', ...cityRes.data.map(c => c.ad).sort()]);
+
+        // şehirleri topla
+        const cityNames = cityRes.data.map(c => c.ad).sort((a,b)=>a.localeCompare(b));
+        setCities(['Tümü', ...cityNames]);
+
+        // üniversiteleri setle
         setAllUnis(uniRes.data);
         setFiltered(uniRes.data);
 
-        // takip durumu ve sayıyı çek
-        const fMap = {}, cMap = {};
-        await Promise.all(uniRes.data.map(async u => {
-          cMap[u.universiteid] = u.takipciSayisi || 0;
-          try {
-            const resp = await axios.get(
-              `${BASE_URL}/api/takip/takip-durumu/${u.universiteid}`
-            );
-            fMap[u.universiteid] = resp.data.takipEdiyorMu;
-          } catch {
-            fMap[u.universiteid] = false;
-          }
-        }));
+        // 2) takip haritalarını hazırlayıp çek
+        const fMap = {};
+        const cMap = {};
+        await Promise.all(
+          uniRes.data.map(async u => {
+            // ilk etapta DB'den gelen takipçi sayısını kullan
+            cMap[u.universiteid] = u.takipciSayisi ?? 0;
+            // kullanıcı bu üniversiteleri takip etmiş mi?
+            try {
+              const resp = await axios.get(
+                `${BASE_URL}/api/takip/takip-durumu/${u.universiteid}`
+              );
+              fMap[u.universiteid] = resp.data.takipEdiyorMu;
+            } catch {
+              fMap[u.universiteid] = false;
+            }
+          })
+        );
         setFollowMap(fMap);
         setCountMap(cMap);
       } catch (e) {
+        console.error(e);
         Alert.alert('Hata','Veriler yüklenemedi');
       } finally {
         setLoading(false);
@@ -67,10 +94,12 @@ const UniversitelerListesi = () => {
     })();
   }, []);
 
+  // filtre uygula
   const applyFilter = useCallback(() => {
     let list = allUnis;
-    if (selectedCity !== 'Tümü')
+    if (selectedCity !== 'Tümü') {
       list = list.filter(u => u.sehiradi === selectedCity);
+    }
     if (search.trim()) {
       const q = normalize(search.trim());
       list = list.filter(u =>
@@ -83,22 +112,26 @@ const UniversitelerListesi = () => {
 
   useEffect(applyFilter, [applyFilter]);
 
-  const toggleFollow = async id => {
+  // takip et / takipten çık işlemi
+  const toggleFollow = async (uniId) => {
     try {
-      if (followMap[id]) {
-        await axios.delete(`${BASE_URL}/api/takip/takipCik/${id}`);
-        setFollowMap(m => ({ ...m, [id]: false }));
-        setCountMap(c => ({ ...c, [id]: c[id] - 1 }));
+      if (followMap[uniId]) {
+        // zaten takip ediyorsa sil
+        await axios.delete(`${BASE_URL}/api/takip/takipCik/${uniId}`);
+        setFollowMap(m => ({ ...m, [uniId]: false }));
+        setCountMap(c => ({ ...c, [uniId]: c[uniId] - 1 }));
       } else {
-        await axios.post(`${BASE_URL}/api/takip/takipEt/${id}`);
-        setFollowMap(m => ({ ...m, [id]: true }));
-        setCountMap(c => ({ ...c, [id]: c[id] + 1 }));
+        // takip et
+        await axios.post(`${BASE_URL}/api/takip/takipEt/${uniId}`);
+        setFollowMap(m => ({ ...m, [uniId]: true }));
+        setCountMap(c => ({ ...c, [uniId]: c[uniId] + 1 }));
       }
     } catch {
       Alert.alert('Hata','İşlem başarısız');
     }
   };
 
+  // render üniversite kartı
   const renderUniversity = ({ item }) => {
     const id = item.universiteid;
     const isF = followMap[id];
@@ -107,10 +140,11 @@ const UniversitelerListesi = () => {
     return (
       <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('UniversiteDetay', { universite: item })}
+        activeOpacity={0.9}
+        onPress={() => navigation.navigate('UniversiteDetay',{ universite: item })}
       >
         <View style={styles.cardHeader}>
-          <Ionicons name="school" color="#f75c5b" size={18}/>
+          <Ionicons name="school" size={18} color="#f75c5b" style={{marginRight:8}}/>
           <Text style={styles.uniName}>{item.universiteadi}</Text>
         </View>
         <Text style={styles.uniCity}>Şehir: {item.sehiradi}</Text>
@@ -120,7 +154,7 @@ const UniversitelerListesi = () => {
         </View>
         <TouchableOpacity
           style={[styles.followBtn, isF && styles.followingBtn]}
-          onPress={() => toggleFollow(id)}
+          onPress={()=>toggleFollow(id)}
         >
           <Text style={[styles.followText, isF && styles.followingText]}>
             {isF ? 'Takipten Çık' : 'Takip Et'}
@@ -130,15 +164,18 @@ const UniversitelerListesi = () => {
     );
   };
 
-  if (loading) return (
-    <View style={styles.loader}>
-      <ActivityIndicator size="large" color="#f75c5b"/>
-    </View>
-  );
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#f75c5b"/>
+      </View>
+    );
+  }
 
   return (
     <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
       <Text style={styles.title}>Üniversiteler</Text>
+
       <View style={styles.filterRow}>
         <View style={styles.pickerWrapper}>
           <Picker
@@ -146,22 +183,28 @@ const UniversitelerListesi = () => {
             onValueChange={setSelectedCity}
             style={styles.picker}
           >
-            {cities.map(c => <Picker.Item key={c} label={c} value={c}/>)}
+            {cities.map(c=>(
+              <Picker.Item key={c} label={c} value={c}/>
+            ))}
           </Picker>
         </View>
         <TextInput
           style={styles.searchInput}
           placeholder="Üniversite veya şehir ara..."
+          placeholderTextColor="#777"
           value={search}
           onChangeText={setSearch}
         />
       </View>
+
       <FlatList
         data={filtered}
         keyExtractor={i=>i.universiteid.toString()}
         renderItem={renderUniversity}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.emptyText}>Üniversite yok</Text>}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>Hiç üniversite bulunamadı.</Text>
+        }
       />
     </LinearGradient>
   );
@@ -169,27 +212,24 @@ const UniversitelerListesi = () => {
 
 export default UniversitelerListesi;
 
-// … stil dosyanız aynen kalsın, buraya eklemedim brevity için …
-
-
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 40 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 26, fontWeight: 'bold', color: '#fff', marginBottom: 16, textAlign: 'center' },
-  filterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  pickerWrapper: { flex: 0.4, backgroundColor: '#fff', borderRadius: 8, marginRight: 8 },
-  picker: { width: '100%', height: 40 },
-  searchInput: { flex: 0.6, backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 12, height: 40, color: '#333' },
-  list: { paddingBottom: 30 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, elevation: 3 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  uniName: { fontSize: 18, fontWeight: '600', color: '#333' },
-  uniCity: { fontSize: 14, color: '#666', marginBottom: 8 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  metaText: { fontSize: 14, color: '#555' },
-  followBtn: { marginTop: 10, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#f75c5b', borderRadius: 20, alignSelf: 'flex-start' },
-  followingBtn: { backgroundColor: '#ccc' },
-  followText: { color: '#fff', fontWeight: 'bold' },
-  followingText: { color: '#333' },
-  emptyText: { textAlign: 'center', color: '#666', marginTop: 50 },
+  container:   { flex:1, paddingHorizontal:16, paddingTop:40 },
+  loader:      { flex:1, justifyContent:'center', alignItems:'center' },
+  title:       { fontSize:26, fontWeight:'bold', color:'#fff', marginBottom:16, textAlign:'center' },
+  filterRow:   { flexDirection:'row', alignItems:'center', marginBottom:12 },
+  pickerWrapper:{ flex:0.4, backgroundColor:'#fff', borderRadius:8, marginRight:8 },
+  picker:      { width:'100%', height:40 },
+  searchInput: { flex:0.6, backgroundColor:'#fff', borderRadius:8, paddingHorizontal:12, height:40, color:'#333' },
+  list:        { paddingBottom:30 },
+  card:        { backgroundColor:'#fff', borderRadius:16, padding:16, marginBottom:12, elevation:3, shadowColor:'#000', shadowOpacity:0.1, shadowRadius:6, shadowOffset:{width:0,height:2} },
+  cardHeader:  { flexDirection:'row', alignItems:'center', marginBottom:4 },
+  uniName:     { fontSize:18, fontWeight:'600', color:'#333' },
+  uniCity:     { fontSize:14, color:'#666', marginBottom:8 },
+  metaRow:     { flexDirection:'row', alignItems:'center', marginTop:4 },
+  metaText:    { fontSize:14, color:'#555' },
+  followBtn:   { marginTop:10, paddingVertical:8, paddingHorizontal:16, backgroundColor:'#f75c5b', borderRadius:20, alignSelf:'flex-start' },
+  followingBtn:{ backgroundColor:'#ccc' },
+  followText:  { color:'#fff', fontWeight:'bold' },
+  followingText:{ color:'#333' },
+  emptyText:   { textAlign:'center', color:'#666', marginTop:50 },
 });

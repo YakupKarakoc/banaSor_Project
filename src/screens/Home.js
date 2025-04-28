@@ -55,7 +55,7 @@ const HomeScreen = () => {
     {
       label: 'Favoriler',
       icon: 'star-outline',
-      onPress: () => {}, // TODO
+      onPress: () => navigation.navigate('Favoriler'), 
     },
     {
       label: 'Mesajlar',

@@ -51,27 +51,37 @@ const LoginScreen = () => {
 
   // --- LOGIN ---
   // --- LOGIN ---
+// src/screens/LoginScreen.js
+
 const handleLogin = async () => {
   try {
-    const r = await axios.post('http://10.0.2.2:3000/api/auth/login', {
-      email,
-      sifre: password,
-    });
+    const r = await axios.post(
+      'http://10.0.2.2:3000/api/auth/login',
+      {
+        email,
+        sifre: password,
+      }
+    );
 
     if (r.data.error) {
       return Alert.alert('Hata', r.data.error);
     }
-    console.log('Giriş başarılı, userObj:', userObj);
 
+    // --- Backend'in döndürdüğü token (alan adı farklı ise console.log ile kontrol edin) ---
+    const token = r.data.token; 
     const userObj = r.data.user ?? r.data;
 
-    // ✅ Giriş yapan kullanıcıyı doğrudan parametre olarak gönder
+    // --- Tüm axios isteklerine Authorization header ekle ---
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    // --- Ana ekrana user objesini gönder ---
     navigation.replace('Home', { user: userObj });
 
   } catch (e) {
     Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
   }
 };
+
 
 
   // --- ŞİFRE SIFIRLAMA ADIM 1 ---
