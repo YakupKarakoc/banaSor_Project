@@ -14,6 +14,10 @@ import StudentComplete from './src/screens/StudentComplete';
 import GraduateComplete from './src/screens/GraduateComplete';
 import GraduateStart from './src/screens/GraduateStart';
 import GraduateVerify from './src/screens/GraduateVerify';
+import FacultyList from './src/screens/FacultyList';
+import DepartmentList from './src/screens/DepartmentList';
+import FacultyDetail from './src/screens/FacultyDetail';
+import DepartmentDetail from './src/screens/DepartmentDetail';
 
 const Stack = createStackNavigator();
 
@@ -33,6 +37,10 @@ export default function App() {
         <Stack.Screen name="GraduateComplete" component={GraduateComplete} />
         <Stack.Screen name="GraduateStart" component={GraduateStart} />
         <Stack.Screen name="GraduateVerify" component={GraduateVerify} />
+        <Stack.Screen name="FacultyList"     component={FacultyList} />
+        <Stack.Screen name="DepartmentList"  component={DepartmentList} />
+        <Stack.Screen name="FacultyDetail" component={FacultyDetail} />
+        <Stack.Screen name="DepartmentDetail" component={DepartmentDetail} />
 
       </Stack.Navigator>
     </NavigationContainer>
