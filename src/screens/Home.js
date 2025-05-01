@@ -19,20 +19,27 @@ import * as Animatable from 'react-native-animatable';
 const HomeScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+
+  // Eğer ProfileScreen'den ya da Login'den yeni user gelirse buraya set edelim
+  const [user, setUser] = useState(route.params?.user || null);
   const [searchValue, setSearchValue] = useState('');
-  const [user, setUser] = useState(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Route.params.user değişince user state'ini güncelle
   useEffect(() => {
     if (route.params?.user) {
       setUser(route.params.user);
     }
+  }, [route.params?.user]);
+
+  // Header fade-in animasyonu
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
       useNativeDriver: true,
     }).start();
-  }, [route.params]);
+  }, []);
 
   const username = user?.kullaniciadi || 'Misafir';
 
@@ -55,7 +62,7 @@ const HomeScreen = () => {
     {
       label: 'Favoriler',
       icon: 'star-outline',
-      onPress: () => navigation.navigate('Favoriler'), 
+      onPress: () => navigation.navigate('Favoriler'),
     },
     {
       label: 'Mesajlar',
@@ -81,13 +88,21 @@ const HomeScreen = () => {
           <Text style={styles.welcomeText}>Hoş Geldin,</Text>
           <Text style={styles.usernameText}>{username}!</Text>
         </View>
-        <TouchableOpacity style={styles.profileIconWrapper} onPress={() => navigation.navigate('Profile', { user })}>
+        <TouchableOpacity
+          style={styles.profileIconWrapper}
+          onPress={() => navigation.navigate('Profile', { user })}
+        >
           <Ionicons name="person-circle-outline" size={42} color="#fff" />
         </TouchableOpacity>
       </Animatable.View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Animatable.View animation="fadeInUp" duration={800} delay={200} style={styles.searchContainer}>
+        <Animatable.View
+          animation="fadeInUp"
+          duration={800}
+          delay={200}
+          style={styles.searchContainer}
+        >
           <Ionicons name="search-outline" size={20} color="#777" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
@@ -100,9 +115,18 @@ const HomeScreen = () => {
 
         <View style={styles.menuContainer}>
           {menuItems.map((item, idx) => (
-            <Animatable.View key={idx} animation="fadeInUp" duration={600} delay={idx * 100}>
-              <TouchableOpacity style={styles.menuItem} onPress={item.onPress} activeOpacity={0.7}>
-                <Ionicons name={item.icon} size={24} color="#f75c5b" style={{ marginRight: 12 }} />
+            <Animatable.View key={idx} animation="fadeInUp" duration={600} delay={idx * 80}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={item.onPress}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={item.icon}
+                  size={24}
+                  color="#f75c5b"
+                  style={{ marginRight: 12 }}
+                />
                 <Text style={styles.menuText}>{item.label}</Text>
               </TouchableOpacity>
             </Animatable.View>
@@ -131,10 +155,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logo: { borderRadius: 25, width: 45, height: 45, resizeMode: 'contain', marginRight: 10 },
+  logo: {
+    borderRadius: 25,
+    width: 45,
+    height: 45,
+    resizeMode: 'contain',
+    marginRight: 10,
+  },
   headerText: { flex: 1, justifyContent: 'center' },
   welcomeText: { color: '#fff', fontSize: 14 },
   usernameText: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 2 },
+  profileIconWrapper: { padding: 4 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
   searchContainer: {
     flexDirection: 'row',

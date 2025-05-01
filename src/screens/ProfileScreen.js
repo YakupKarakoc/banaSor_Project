@@ -1,157 +1,148 @@
 // src/screens/ProfileScreen.js
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import axios from 'axios';
+import { useRoute, useNavigation } from '@react-navigation/native';
 
-// 🧠 Yardımcı fonksiyon: Kullanıcı rolünü ID'ye göre çözümle
-const getUserRoleName = (roleId) => {
-  const roles = {
-    1: 'Aday Öğrenci',
-    2: 'Üniversite Öğrencisi',
-    3: 'Mezun Öğrenci',
-    4: 'Admin',
-    5: 'SuperUser',
-  };
-  return roles[roleId] || 'Bilinmeyen Rol';
-};
+const BASE_URL = 'http://10.0.2.2:3000';
 
-const ProfileScreen = () => {
+export default function ProfileScreen() {
   const navigation = useNavigation();
-  const route = useRoute();
+  const { user: initialUser } = useRoute().params; // user param
+  const [ad, setAd] = useState(initialUser.ad);
+  const [soyad, setSoyad] = useState(initialUser.soyad);
+  const [kullaniciAdi, setKullaniciAdi] = useState(initialUser.kullaniciadi);
+  const [sifre, setSifre] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const user = route.params?.user || { ad: 'Kullanıcı', soyad: '', email: '—' };
+  const handleSave = async () => {
+    if (!ad.trim() || !soyad.trim() || !kullaniciAdi.trim()) {
+      return Alert.alert('Hata', 'Ad, soyad ve kullanıcı adı boş bırakılamaz.');
+    }
 
-  const calculateTimeAgo = (dateStr) => {
-    const diff = Date.now() - new Date(dateStr);
-    const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30));
-    return months > 12
-      ? `${Math.floor(months / 12)} yıldır`
-      : `${months} aydır`;
+    setLoading(true);
+    try {
+      const body = {
+        ad: ad.trim(),
+        soyad: soyad.trim(),
+        kullaniciAdi: kullaniciAdi.trim(),
+      };
+      if (sifre.trim()) {
+        body.sifre = sifre;
+      }
+
+      const res = await axios.put(
+        `${BASE_URL}/api/profil/guncelle`,
+        body
+      );
+
+      const updatedUser = {
+        ...initialUser,
+        ad: res.data.kullanici.ad,
+        soyad: res.data.kullanici.soyad,
+        kullaniciadi: res.data.kullanici.kullaniciadi,
+      };
+
+      Alert.alert('Başarılı', 'Profiliniz güncellendi.', [
+        {
+          text: 'Tamam',
+          onPress: () => {
+            // Home'a updatedUser ile dön
+            navigation.replace('Home', { user: updatedUser });
+          },
+        },
+      ]);
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Hata', e.response?.data?.mesaj || 'Güncelleme başarısız.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loader]}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
 
   return (
     <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Profilim</Text>
+      <ScrollView contentContainerStyle={styles.inner}>
+        <Text style={styles.title}>Profilimi Güncelle</Text>
 
-        <View style={styles.infoBox}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user.ad?.charAt(0)}</Text>
-          </View>
-          <Text style={styles.name}>{user.ad} {user.soyad}</Text>
-          <Text style={styles.email}>{user.email}</Text>
-        </View>
+        <Text style={styles.label}>Ad</Text>
+        <TextInput
+          style={styles.input}
+          value={ad}
+          onChangeText={setAd}
+          placeholder="Adınız"
+        />
 
-        <View style={styles.section}>
-          <Text style={styles.label}>Ad</Text>
-          <Text style={styles.value}>{user.ad}</Text>
+        <Text style={styles.label}>Soyad</Text>
+        <TextInput
+          style={styles.input}
+          value={soyad}
+          onChangeText={setSoyad}
+          placeholder="Soyadınız"
+        />
 
-          <Text style={styles.label}>Soyad</Text>
-          <Text style={styles.value}>{user.soyad}</Text>
+        <Text style={styles.label}>Kullanıcı Adı</Text>
+        <TextInput
+          style={styles.input}
+          value={kullaniciAdi}
+          onChangeText={setKullaniciAdi}
+          placeholder="Kullanıcı Adınız"
+        />
 
-          <Text style={styles.label}>E‑posta</Text>
-          <Text style={styles.value}>{user.email}</Text>
+        <Text style={styles.label}>Yeni Şifre (opsiyonel)</Text>
+        <TextInput
+          style={styles.input}
+          value={sifre}
+          onChangeText={setSifre}
+          placeholder="Şifre"
+          secureTextEntry
+        />
 
-          <Text style={styles.label}>Kullanıcı Adı</Text>
-          <Text style={styles.value}>{user.kullaniciadi}</Text>
-
-          <Text style={styles.label}>Puan</Text>
-          <Text style={styles.value}>{user.puan}</Text>
-
-          <Text style={styles.label}>Kayıt Tarihi</Text>
-          <Text style={styles.value}>
-            {new Date(user.olusturmatarihi).toLocaleDateString('tr-TR', {
-              day: 'numeric', month: 'long', year: 'numeric'
-            })}
-          </Text>
-
-          <Text style={styles.label}>Üyelik Süresi</Text>
-          <Text style={styles.value}>{calculateTimeAgo(user.olusturmatarihi)}</Text>
-
-          <Text style={styles.label}>Hesap Durumu</Text>
-          <Text style={styles.value}>{user.aktifmi ? 'Aktif' : 'Pasif'}</Text>
-
-          <Text style={styles.label}>Doğrulama Durumu</Text>
-          <Text style={styles.value}>{user.onaylandimi ? 'Doğrulandı' : 'Beklemede'}</Text>
-
-          <Text style={styles.label}>Kullanıcı Rolü</Text>
-          <Text style={styles.value}>{getUserRoleName(user.kullanicituruid)}</Text>
-        </View>
-
-        <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-          <Text style={styles.buttonText}>← Geri Dön</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSave}>
+          <Text style={styles.buttonText}>Güncellemeyi Kaydet</Text>
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
   );
-};
-
-export default ProfileScreen;
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: 20, paddingTop: 60 },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  infoBox: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  avatar: {
+  loader: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#ff8a5c' },
+  inner: { padding: 20, paddingTop: 60 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 30 },
+  label: { color: '#fff', marginBottom: 6, marginTop: 12 },
+  input: {
     backgroundColor: '#fff',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  avatarText: {
-    fontSize: 28,
-    color: '#f75c5b',
-    fontWeight: 'bold',
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  email: {
-    fontSize: 14,
-    color: '#fff',
-    opacity: 0.9,
-  },
-  section: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 14,
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 10,
-  },
-  value: {
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 48,
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
   },
   button: {
     backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 10,
+    borderRadius: 25,
+    paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 20,
   },
-  buttonText: {
-    color: '#f75c5b',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  buttonText: { color: '#f75c5b', fontWeight: '600', fontSize: 16 },
 });
