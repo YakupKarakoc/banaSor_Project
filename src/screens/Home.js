@@ -20,19 +20,16 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
-  // Eğer ProfileScreen'den ya da Login'den yeni user gelirse buraya set edelim
   const [user, setUser] = useState(route.params?.user || null);
   const [searchValue, setSearchValue] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Route.params.user değişince user state'ini güncelle
   useEffect(() => {
     if (route.params?.user) {
       setUser(route.params.user);
     }
   }, [route.params?.user]);
 
-  // Header fade-in animasyonu
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -52,12 +49,12 @@ const HomeScreen = () => {
     {
       label: 'Soru-Cevap',
       icon: 'chatbubbles-outline',
-      onPress: () => {}, // TODO
+      onPress: () => navigation.navigate('Konular'),  // ← Burayı güncelledik
     },
     {
       label: 'Topluluklar',
       icon: 'people-outline',
-      onPress: () => {}, // TODO
+      onPress: () => navigation.navigate('Forums'),  // eğer ForumList ekranınız “Forums” ise
     },
     {
       label: 'Favoriler',
@@ -67,7 +64,7 @@ const HomeScreen = () => {
     {
       label: 'Mesajlar',
       icon: 'mail-outline',
-      onPress: () => {}, // TODO
+      onPress: () => navigation.navigate('Messages'), // Mesaj ekranınızın adı
     },
     {
       label: 'Profilim',

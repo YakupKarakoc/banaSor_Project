@@ -29,27 +29,27 @@ export default function UniversiteDetay() {
   const [followerCount, setFollowerCount] = useState(universite.takipciSayisi ?? 0);
   const [loadingFollow, setLoadingFollow] = useState(false);
 
-  // fetch faculties
+  // 1) Fakülteleri çek
   useEffect(() => {
     axios.get(`${BASE_URL}/api/education/faculty`, {
       params: { universiteId: uniId, aktifMi: true },
     })
     .then(res => setFaculties(res.data))
-    .catch(console.error)
+    .catch(() => Alert.alert('Hata','Fakülteler yüklenemedi'))
     .finally(() => setLoadingFac(false));
   }, [uniId]);
 
-  // fetch follow status + count
+  // 2) Takip durumunu ve sayısını çek
   useEffect(() => {
     axios.get(`${BASE_URL}/api/takip/takip-durumu/${uniId}`)
       .then(res => setIsFollowing(res.data.takipEdiyorMu))
-      .catch(() => {})
-      .finally(() => {});
+      .catch(() => {});
     axios.get(`${BASE_URL}/api/takip/universite/${uniId}/takipciler`)
       .then(res => setFollowerCount(res.data.toplam))
       .catch(() => {});
   }, [uniId]);
 
+  // 3) Takip / takibi bırak
   const toggleFollow = async () => {
     setLoadingFollow(true);
     try {
@@ -58,15 +58,15 @@ export default function UniversiteDetay() {
       } else {
         await axios.post(`${BASE_URL}/api/takip/takipEt/${uniId}`);
       }
-      // re-fetch
+      // güncel durumu yeniden çek
       const [st, ct] = await Promise.all([
         axios.get(`${BASE_URL}/api/takip/takip-durumu/${uniId}`),
-        axios.get(`${BASE_URL}/api/takip/universite/${uniId}/takipciler`),
+        axios.get(`${BASE_URL}/api/takip/universite/${uniId}/takipciler`)
       ]);
       setIsFollowing(st.data.takipEdiyorMu);
       setFollowerCount(ct.data.toplam);
-    } catch (e) {
-      Alert.alert('Hata', 'İşlem başarısız.');
+    } catch {
+      Alert.alert('Hata','Takip işlemi başarısız');
     } finally {
       setLoadingFollow(false);
     }
@@ -75,11 +75,11 @@ export default function UniversiteDetay() {
   return (
     <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Header */}
+        {/* Başlık */}
         <Text style={styles.title}>{universite.universiteadi}</Text>
         <Text style={styles.subTitle}>Şehir: {universite.sehiradi}</Text>
 
-        {/* Stats + Follow button */}
+        {/* İstatistikler + Takip */}
         <View style={styles.statsRow}>
           <View style={styles.stat}>
             <Ionicons name="star" size={18} color="#fff" />
@@ -95,7 +95,7 @@ export default function UniversiteDetay() {
             disabled={loadingFollow}
           >
             {loadingFollow
-              ? <ActivityIndicator color="#fff" />
+              ? <ActivityIndicator color="#fff"/>
               : <Text style={styles.followText}>
                   {isFollowing ? 'Takipten Çık' : 'Takip Et'}
                 </Text>
@@ -103,38 +103,36 @@ export default function UniversiteDetay() {
           </TouchableOpacity>
         </View>
 
-        {/* Announcements */}
+        {/* Duyurular */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>📢 Son Duyurular</Text>
           <Text style={styles.cardItem}>• Bahar şenlikleri 24 Nisan’da başlıyor!</Text>
           <Text style={styles.cardItem}>• Yüz yüze eğitime geçiş duyurusu yayımlandı.</Text>
         </View>
 
-        {/* Forum snippets */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>💬 Forum Örnekleri</Text>
+        {/* FORUM ÖRNEKLERİ – buraya tıklayınca ForumScreen’e geçiş */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => navigation.navigate('Forum', { universiteId: uniId })}
+        >
+          <Text style={styles.cardTitle}>💬 Forum</Text>
           <Text style={styles.cardItemSmall}>
-            Q: Hazırlık sınıfı zor mu? 🔍
+            Bu üniversitenin forum başlıklarını görüntüle
           </Text>
-          <Text style={styles.cardItemSmall}>
-            A: Hocalar destek oluyor, ama bireysel çalışma önemli.
-          </Text>
-        </View>
+        </TouchableOpacity>
 
-        {/* Faculties list */}
+        {/* Fakülteler */}
         <Text style={styles.sectionHeader}>Fakülteler</Text>
         {loadingFac ? (
-          <ActivityIndicator color="#fff" size="large" />
+          <ActivityIndicator color="#fff" size="large"/>
         ) : faculties.map(f => (
           <TouchableOpacity
             key={f.fakulteid}
             style={styles.listItem}
-            onPress={() =>
-              navigation.push('FacultyDetail', { universite, faculty: f })
-            }
+            onPress={() => navigation.push('FacultyDetail', { universite, faculty: f })}
           >
             <Text style={styles.itemText}>{f.fakulteadi}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
+            <Ionicons name="chevron-forward" size={20} color="#fff"/>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -143,54 +141,21 @@ export default function UniversiteDetay() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 20 },
-  title: {
-    color: '#fff', fontSize: 24, fontWeight: '700',
-    textAlign: 'center', marginBottom: 4,
-  },
-  subTitle: {
-    color: '#fff', fontSize: 16,
-    textAlign: 'center', marginBottom: 16,
-  },
-  statsRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-around', marginBottom: 20,
-  },
-  stat: { flexDirection: 'row', alignItems: 'center' },
-  statText: { color: '#fff', fontSize: 14, marginLeft: 4 },
-  followBtn: {
-    paddingVertical: 6, paddingHorizontal: 12,
-    backgroundColor: '#fff', borderRadius: 20,
-  },
-  followingBtn: {
-    backgroundColor: '#444'
-  },
-  followText: {
-    color: '#f75c5b', fontWeight: '600'
-  },
-  card: {
-    backgroundColor: '#fff', borderRadius: 14,
-    padding: 14, marginBottom: 12, elevation: 3
-  },
-  cardTitle: {
-    fontSize: 16, fontWeight: '600',
-    marginBottom: 8, color: '#f75c5b'
-  },
-  cardItem: {
-    fontSize: 14, color: '#444', marginBottom: 4
-  },
-  cardItemSmall: {
-    fontSize: 13, color: '#444', marginBottom: 4
-  },
-  sectionHeader: {
-    color: '#fff', fontSize: 18,
-    fontWeight: '600', marginTop: 16, marginBottom: 8
-  },
-  listItem: {
-    flexDirection: 'row', alignItems: 'center',
-    padding: 12, backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 8, marginBottom: 8
-  },
-  itemText: { flex: 1, color: '#fff', fontSize: 16 },
+  container:      { flex: 1 },
+  content:        { padding: 20 },
+  title:          { color: '#fff', fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
+  subTitle:       { color: '#fff', fontSize: 16, textAlign: 'center', marginBottom: 16 },
+  statsRow:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginBottom: 20 },
+  stat:           { flexDirection: 'row', alignItems: 'center' },
+  statText:       { color: '#fff', fontSize: 14, marginLeft: 4 },
+  followBtn:      { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#fff', borderRadius: 20 },
+  followingBtn:   { backgroundColor: '#444' },
+  followText:     { color: '#f75c5b', fontWeight: '600' },
+  card:           { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 12, elevation: 3 },
+  cardTitle:      { fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#f75c5b' },
+  cardItem:       { fontSize: 14, color: '#444', marginBottom: 4 },
+  cardItemSmall:  { fontSize: 13, color: '#444', marginBottom: 4 },
+  sectionHeader:  { color: '#fff', fontSize: 18, fontWeight: '600', marginTop: 16, marginBottom: 8 },
+  listItem:       { flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, marginBottom: 8 },
+  itemText:       { flex: 1, color: '#fff', fontSize: 16 },
 });
