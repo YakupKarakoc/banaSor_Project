@@ -38,6 +38,7 @@ import KonularScreen from './src/screens/KonularScreen'
 // Forum akışı
 import ForumScreen from './src/screens/ForumScreen'
 import NewForumScreen from './src/screens/NewForumScreen'
+import ForumDetailScreen from './src/screens/ForumDetailScreen';
 
 const Stack = createStackNavigator()
 
@@ -83,7 +84,15 @@ export default function App() {
         {/* Forum */}
         <Stack.Screen name="Forum" component={ForumScreen} />
         <Stack.Screen name="NewForum" component={NewForumScreen} />
+        <Stack.Screen
+          name="ForumDetail"           // <-- yeni ekran adı
+          component={ForumDetailScreen}
+        />
+
+        {/* … sonraki screen’ler … */}
       </Stack.Navigator>
+        
+      
     </NavigationContainer>
   )
 }
