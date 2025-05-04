@@ -1,107 +1,135 @@
 // src/screens/ForumDetailScreen.js
+
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, FlatList, TextInput,
-  TouchableOpacity, ActivityIndicator,
-  StyleSheet, Alert, KeyboardAvoidingView, Platform
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
-import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 
 const BASE = 'http://10.0.2.2:3000';
 
 export default function ForumDetailScreen() {
   const { forumId } = useRoute().params;
-  const navigation = useNavigation();
-  const isFocused = useIsFocused();
-
-  const [entries, setEntries]   = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [forum, setForum] = useState(null);
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newEntry, setNewEntry] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [posting, setPosting] = useState(false);
 
-  const fetchEntries = () => {
+  // 1) Forum + entry’leri çek
+  const fetchForum = () => {
     setLoading(true);
-    axios.get(`${BASE}/api/forum/entryGetir`, { params: { forumId } })
-      .then(res => setEntries(res.data))
-      .catch(err => {
-        console.error(err);
-        Alert.alert('Hata','Entry’ler yüklenemedi');
+    axios
+      .get(`${BASE}/api/forum/detay/${forumId}`)
+      .then(({ data }) => {
+        setForum(data);
+        setEntries(data.entryler);
       })
+      .catch(() => Alert.alert('Hata', 'Forum detayları yüklenemedi'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(fetchEntries, [forumId, isFocused]);
+  useEffect(fetchForum, [forumId]);
 
-  const submitEntry = () => {
+  // 2) Yeni entry ekle
+  const handleAddEntry = () => {
     if (!newEntry.trim()) {
-      return Alert.alert('Hata','Boş entry gönderemezsiniz');
+      return Alert.alert('Hata', 'Lütfen bir içerik girin.');
     }
-    setSubmitting(true);
-    axios.post(`${BASE}/api/forum/entryEkle`, {
-      forumId,
-      icerik: newEntry.trim()
-    })
-    .then(() => {
-      setNewEntry('');
-      fetchEntries();           // hemen güncelle
-    })
-    .catch(err => {
-      console.error(err);
-      Alert.alert('Hata','Entry eklenemedi');
-    })
-    .finally(() => setSubmitting(false));
+    setPosting(true);
+    axios
+      .post(`${BASE}/api/forum/entryEkle`, {
+        forumId,
+        icerik: newEntry.trim(),
+      })
+      .then(() => {
+        setNewEntry('');
+        fetchForum(); // listeyi güncelle
+      })
+      .catch(() => Alert.alert('Hata', 'Entry eklenemedi'))
+      .finally(() => setPosting(false));
   };
 
-  if (loading) {
+  if (loading || !forum) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#fff"/>
+        <ActivityIndicator size="large" color="#fff" />
       </View>
     );
   }
 
   return (
-    <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
-      <Text style={styles.title}>Forum Detay</Text>
+    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
+      {/* Forum Başlığı ve Meta */}
+      <View style={styles.header}>
+        <Text style={styles.title}>{forum.baslik}</Text>
+        <Text style={styles.meta}>
+          {forum.universite} · Oluşturan: {forum.olusturanKullaniciAdi}
+        </Text>
+        <Text style={styles.metaSmall}>
+          {new Date(forum.olusturmaTarihi).toLocaleString('tr-TR')}
+        </Text>
+        <Text style={styles.count}>
+          Entry sayısı: {forum.entrySayisi}
+        </Text>
+      </View>
+
+      {/* Entry Listesi */}
       <FlatList
         data={entries}
-        keyExtractor={e => e.entryid.toString()}
+        keyExtractor={e => e.entryId.toString()}
+        ListEmptyComponent={
+          <Text style={styles.empty}>Henüz entry yok. İlki siz ekleyin!</Text>
+        }
         renderItem={({ item }) => (
-          <View style={styles.entryCard}>
-            <Text style={styles.entryAuthor}>{item.kullaniciadi}</Text>
-            <Text style={styles.entryText}>{item.icerik}</Text>
-            <Text style={styles.entryTime}>{new Date(item.olusturmatarihi).toLocaleString()}</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardText}>{item.icerik}</Text>
+            <View style={styles.cardFooter}>
+              <Text style={styles.metaSmall}>
+                — {item.kullaniciAdi} ·{' '}
+                {new Date(item.olusturmaTarihi).toLocaleString('tr-TR')}
+              </Text>
+              <View style={styles.reactions}>
+                <Text style={styles.reaction}>👍 {item.likeSayisi}</Text>
+                <Text style={styles.reaction}>👎 {item.dislikeSayisi}</Text>
+              </View>
+            </View>
           </View>
         )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>Henüz entry yok.</Text>
-          </View>
-        }
+        contentContainerStyle={{ padding: 16 }}
       />
 
+      {/* Yeni Entry Gönder */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.inputContainer}
+        style={styles.footer}
       >
         <TextInput
           style={styles.input}
-          placeholder="Yeni entry girin..."
-          placeholderTextColor="#999"
+          placeholder="Yeni entry yazın…"
+          placeholderTextColor="#aaa"
           value={newEntry}
           onChangeText={setNewEntry}
         />
         <TouchableOpacity
-          style={styles.sendBtn}
-          onPress={submitEntry}
-          disabled={submitting}
+          style={styles.btn}
+          onPress={handleAddEntry}
+          disabled={posting}
         >
-          {submitting 
-            ? <ActivityIndicator color="#fff"/> 
-            : <Text style={styles.sendBtnText}>Gönder</Text>
-          }
+          <Text style={styles.btnText}>
+            {posting ? 'Gönderiliyor…' : 'Gönder'}
+          </Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -109,17 +137,21 @@ export default function ForumDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:      { flex:1, padding:16 },
-  loader:         { flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#f75c5b' },
-  title:          { fontSize:20, fontWeight:'bold', color:'#fff', textAlign:'center', marginBottom:12 },
-  entryCard:      { backgroundColor:'#fff', borderRadius:8, padding:12, marginBottom:10 },
-  entryAuthor:    { fontWeight:'600', marginBottom:4 },
-  entryText:      { marginBottom:6, color:'#333' },
-  entryTime:      { fontSize:10, color:'#666', textAlign:'right' },
-  empty:          { flex:1, justifyContent:'center', alignItems:'center', marginTop:20 },
-  emptyText:      { color:'#fff', opacity:0.8 },
-  inputContainer: { flexDirection:'row', alignItems:'center', marginTop:'auto', backgroundColor:'#fff', borderRadius:25, paddingHorizontal:12, paddingVertical:8 },
-  input:          { flex:1, fontSize:16, color:'#333', height:40 },
-  sendBtn:        { marginLeft:8, backgroundColor:'#f75c5b', paddingHorizontal:16, paddingVertical:8, borderRadius:20 },
-  sendBtnText:    { color:'#fff', fontWeight:'600' },
+  container: { flex: 1 },
+  loader:    { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f75c5b' },
+  header:    { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.5)' },
+  title:     { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  meta:      { color: '#fff', fontSize: 14, marginTop: 4 },
+  metaSmall: { color: '#ddd', fontSize: 12, marginTop: 2 },
+  count:     { color: '#fff', fontSize: 14, marginTop: 4, fontStyle: 'italic' },
+  card:      { backgroundColor: '#fff', borderRadius: 8, padding: 12, marginVertical: 6 },
+  cardText:  { fontSize: 16, color: '#333' },
+  cardFooter:{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  reactions:{ flexDirection: 'row' },
+  reaction: { marginLeft: 12, fontSize: 14, color: '#555' },
+  empty:     { textAlign: 'center', color: '#fff', marginTop: 20 },
+  footer:    { flexDirection: 'row', padding: 16, backgroundColor: 'rgba(0,0,0,0.05)' },
+  input:     { flex: 1, backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, height: 44 },
+  btn:       { marginLeft: 8, backgroundColor: '#fff', borderRadius: 20, justifyContent: 'center', paddingHorizontal: 16 },
+  btnText:   { color: '#f75c5b', fontWeight: '600' },
 });
