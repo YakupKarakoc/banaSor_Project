@@ -30,10 +30,12 @@ import DepartmentDetail from './src/screens/DepartmentDetail'
 
 // Soru-Cevap akışı
 import TopicListScreen from './src/screens/TopicListScreen'
-import QuestionListScreen from './src/screens/QuestionListScreen'
-import QuestionDetailScreen from './src/screens/QuestionDetailScreen'
-import NewQuestionScreen from './src/screens/NewQuestionScreen'
 import KonularScreen from './src/screens/KonularScreen'
+import QuestionListScreen from './src/screens/QuestionListScreen'
+import NewQuestionScreen from './src/screens/NewQuestionScreen'
+import QuestionDetailScreen from './src/screens/QuestionDetailScreen'
+
+
 
 // Forum akışı
 import ForumScreen from './src/screens/ForumScreen'
@@ -77,10 +79,10 @@ export default function App() {
         {/* Soru-Cevap */}
         <Stack.Screen name="Topics" component={TopicListScreen} />
         <Stack.Screen name="Konular" component={KonularScreen} />
-        <Stack.Screen name="QuestionList" component={QuestionListScreen} />
-        <Stack.Screen name="QuestionDetail" component={QuestionDetailScreen} />
+        <Stack.Screen name="QuestionList" component={QuestionListScreen}/>
         <Stack.Screen name="NewQuestion" component={NewQuestionScreen} />
-
+        <Stack.Screen name="QuestionDetail" component={QuestionDetailScreen} />
+       
         {/* Forum */}
         <Stack.Screen name="Forum" component={ForumScreen} />
         <Stack.Screen name="NewForum" component={NewForumScreen} />

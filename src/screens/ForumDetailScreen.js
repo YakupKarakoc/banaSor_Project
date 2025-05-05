@@ -1,126 +1,118 @@
 // src/screens/ForumDetailScreen.js
-
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform
+  View, Text, FlatList, TouchableOpacity,
+  TextInput, ActivityIndicator, Alert,
+  StyleSheet, KeyboardAvoidingView, Platform
 } from 'react-native';
 import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useIsFocused } from '@react-navigation/native';
 
 const BASE = 'http://10.0.2.2:3000';
 
 export default function ForumDetailScreen() {
   const { forumId } = useRoute().params;
-  const [forum, setForum] = useState(null);
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [newEntry, setNewEntry] = useState('');
-  const [posting, setPosting] = useState(false);
+  const isFocused   = useIsFocused();
 
-  // 1) Forum + entry’leri çek
-  const fetchForum = () => {
+  const [forum,    setForum]    = useState(null);
+  const [entries,  setEntries]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [newEntry, setNewEntry] = useState('');
+  const [posting,  setPosting]  = useState(false);
+
+  const fetchDetail = () => {
     setLoading(true);
-    axios
-      .get(`${BASE}/api/forum/detay/${forumId}`)
-      .then(({ data }) => {
-        setForum(data);
-        setEntries(data.entryler);
+    axios.get(`${BASE}/api/forum/detay/${forumId}`)
+      .then(res => {
+        setForum(res.data);
+        setEntries(res.data.entryler || []);
       })
-      .catch(() => Alert.alert('Hata', 'Forum detayları yüklenemedi'))
+      .catch(err => {
+        console.error(err);
+        Alert.alert('Hata', 'Forum detayları yüklenemedi');
+      })
       .finally(() => setLoading(false));
   };
 
-  useEffect(fetchForum, [forumId]);
+  useEffect(fetchDetail, [forumId, isFocused]);
 
-  // 2) Yeni entry ekle
   const handleAddEntry = () => {
     if (!newEntry.trim()) {
-      return Alert.alert('Hata', 'Lütfen bir içerik girin.');
+      return Alert.alert('Hata', 'Lütfen içerik girin.');
     }
     setPosting(true);
-    axios
-      .post(`${BASE}/api/forum/entryEkle`, {
-        forumId,
-        icerik: newEntry.trim(),
-      })
-      .then(() => {
-        setNewEntry('');
-        fetchForum(); // listeyi güncelle
-      })
-      .catch(() => Alert.alert('Hata', 'Entry eklenemedi'))
-      .finally(() => setPosting(false));
+    axios.post(`${BASE}/api/forum/entryEkle`, {
+      forumId,
+      icerik: newEntry.trim(),
+    })
+    .then(() => {
+      setNewEntry('');
+      fetchDetail();
+    })
+    .catch(err => {
+      console.error(err);
+      Alert.alert('Hata', 'Mesaj eklenemedi');
+    })
+    .finally(() => setPosting(false));
   };
 
   if (loading || !forum) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#fff" />
+        <ActivityIndicator size="large" color="#fff"/>
       </View>
     );
   }
 
+  const owner = forum.olusturanKullaniciAdi ?? forum.olusturankullaniciadi;
+
   return (
-    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
-      {/* Forum Başlığı ve Meta */}
+    <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{forum.baslik}</Text>
         <Text style={styles.meta}>
-          {forum.universite} · Oluşturan: {forum.olusturanKullaniciAdi}
-        </Text>
-        <Text style={styles.metaSmall}>
+          Oluşturan: {owner} •{' '}
           {new Date(forum.olusturmaTarihi).toLocaleString('tr-TR')}
         </Text>
-        <Text style={styles.count}>
-          Entry sayısı: {forum.entrySayisi}
-        </Text>
+        <Text style={styles.count}>Mesaj sayısı: {forum.entrySayisi ?? 0}</Text>
       </View>
 
-      {/* Entry Listesi */}
-      <FlatList
-        data={entries}
-        keyExtractor={e => e.entryId.toString()}
-        ListEmptyComponent={
-          <Text style={styles.empty}>Henüz entry yok. İlki siz ekleyin!</Text>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.cardText}>{item.icerik}</Text>
-            <View style={styles.cardFooter}>
-              <Text style={styles.metaSmall}>
-                — {item.kullaniciAdi} ·{' '}
-                {new Date(item.olusturmaTarihi).toLocaleString('tr-TR')}
-              </Text>
-              <View style={styles.reactions}>
-                <Text style={styles.reaction}>👍 {item.likeSayisi}</Text>
-                <Text style={styles.reaction}>👎 {item.dislikeSayisi}</Text>
+      {entries.length===0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>Henüz mesaj yok.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={entries}
+          keyExtractor={e => (e.entryId ?? e.entryid).toString()}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.cardText}>{item.icerik}</Text>
+              <View style={styles.cardFooter}>
+                <Text style={styles.cardUser}>— {item.kullaniciAdi ?? item.kullaniciadi}</Text>
+                <View style={styles.reactions}>
+                  <Text style={styles.reaction}>👍{item.likeSayisi}</Text>
+                  <Text style={styles.reaction}>👎{item.dislikeSayisi}</Text>
+                </View>
               </View>
             </View>
-          </View>
-        )}
-        contentContainerStyle={{ padding: 16 }}
-      />
+          )}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+        />
+      )}
 
-      {/* Yeni Entry Gönder */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.footer}
+        behavior={Platform.OS==='ios'?'padding':'height'}
       >
         <TextInput
           style={styles.input}
-          placeholder="Yeni entry yazın…"
+          placeholder="Yeni mesajınızı yazın…"
           placeholderTextColor="#aaa"
           value={newEntry}
           onChangeText={setNewEntry}
+          multiline
         />
         <TouchableOpacity
           style={styles.btn}
@@ -137,21 +129,22 @@ export default function ForumDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  loader:    { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f75c5b' },
-  header:    { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.5)' },
-  title:     { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  meta:      { color: '#fff', fontSize: 14, marginTop: 4 },
-  metaSmall: { color: '#ddd', fontSize: 12, marginTop: 2 },
-  count:     { color: '#fff', fontSize: 14, marginTop: 4, fontStyle: 'italic' },
-  card:      { backgroundColor: '#fff', borderRadius: 8, padding: 12, marginVertical: 6 },
-  cardText:  { fontSize: 16, color: '#333' },
-  cardFooter:{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  reactions:{ flexDirection: 'row' },
-  reaction: { marginLeft: 12, fontSize: 14, color: '#555' },
-  empty:     { textAlign: 'center', color: '#fff', marginTop: 20 },
-  footer:    { flexDirection: 'row', padding: 16, backgroundColor: 'rgba(0,0,0,0.05)' },
-  input:     { flex: 1, backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 16, height: 44 },
-  btn:       { marginLeft: 8, backgroundColor: '#fff', borderRadius: 20, justifyContent: 'center', paddingHorizontal: 16 },
-  btnText:   { color: '#f75c5b', fontWeight: '600' },
+  container: { flex:1 },
+  loader:    { flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#f75c5b' },
+  header:    { padding:16, borderBottomWidth:1, borderBottomColor:'rgba(255,255,255,0.5)' },
+  title:     { color:'#fff', fontSize:20, fontWeight:'bold' },
+  meta:      { color:'#ddd', fontSize:12, marginTop:4 },
+  count:     { color:'#fff', fontSize:14, marginTop:8 },
+  empty:     { flex:1, justifyContent:'center', alignItems:'center' },
+  emptyText: { color:'#fff', opacity:0.8 },
+  card:      { backgroundColor:'#fff', borderRadius:8, padding:12, marginVertical:6, marginHorizontal:16 },
+  cardText:  { fontSize:16, color:'#333' },
+  cardFooter:{ flexDirection:'row', justifyContent:'space-between', marginTop:8 },
+  cardUser:  { fontSize:12, color:'#555' },
+  reactions:{ flexDirection:'row' },
+  reaction: { marginLeft:12, fontSize:12, color:'#555' },
+  footer:    { flexDirection:'row', padding:16, backgroundColor:'rgba(0,0,0,0.05)' },
+  input:     { flex:1, backgroundColor:'#fff', borderRadius:20, paddingHorizontal:16, height:44 },
+  btn:       { marginLeft:8, backgroundColor:'#fff', borderRadius:20, justifyContent:'center', paddingHorizontal:16 },
+  btnText:   { color:'#f75c5b', fontWeight:'600' },
 });
