@@ -54,6 +54,11 @@ const LoginScreen = () => {
 // src/screens/LoginScreen.js
 
 const handleLogin = async () => {
+  // Admin shortcut
+  if (email === 'admin' && password === 'admin') {
+    return navigation.replace('AdminDashboard');
+  }
+
   try {
     const r = await axios.post(
       'http://10.0.2.2:3000/api/auth/login',
@@ -67,14 +72,11 @@ const handleLogin = async () => {
       return Alert.alert('Hata', r.data.error);
     }
 
-    // --- Backend'in döndürdüğü token (alan adı farklı ise console.log ile kontrol edin) ---
     const token = r.data.token; 
     const userObj = r.data.user ?? r.data;
 
-    // --- Tüm axios isteklerine Authorization header ekle ---
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    // --- Ana ekrana user objesini gönder ---
     navigation.replace('Home', { user: userObj });
 
   } catch (e) {
