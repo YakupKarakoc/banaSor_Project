@@ -74,88 +74,279 @@ export default function UniversiteDetay() {
 
   return (
     <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Başlık */}
-        <Text style={styles.title}>{universite.universiteadi}</Text>
-        <Text style={styles.subTitle}>Şehir: {universite.sehiradi}</Text>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Başlık Bölümü */}
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>{universite.universiteadi}</Text>
+          <Text style={styles.subTitle}>Şehir: {universite.sehiradi}</Text>
+        </View>
 
         {/* İstatistikler + Takip */}
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Ionicons name="star" size={18} color="#fff" />
-            <Text style={styles.statText}> {universite.puan ?? '-'} puan</Text>
-          </View>
-          <View style={styles.stat}>
-            <Ionicons name="people" size={18} color="#fff" />
-            <Text style={styles.statText}> {followerCount} takipçi</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Ionicons name="star" size={20} color="#fff" />
+              <Text style={styles.statText}> {universite.puan ?? '-'} puan</Text>
+            </View>
+            <View style={styles.stat}>
+              <Ionicons name="people" size={20} color="#fff" />
+              <Text style={styles.statText}> {followerCount} takipçi</Text>
+            </View>
           </View>
           <TouchableOpacity
             style={[styles.followBtn, isFollowing && styles.followingBtn]}
             onPress={toggleFollow}
             disabled={loadingFollow}
           >
-            {loadingFollow
-              ? <ActivityIndicator color="#fff"/>
-              : <Text style={styles.followText}>
+            {loadingFollow ? (
+              <ActivityIndicator color="#f75c5b" size="small" />
+            ) : (
+              <>
+                <Ionicons 
+                  name={isFollowing ? "checkmark-circle" : "add-circle"} 
+                  size={18} 
+                  color={isFollowing ? "#666" : "#f75c5b"} 
+                  style={styles.followIcon}
+                />
+                <Text style={[styles.followText, isFollowing && styles.followingText]}>
                   {isFollowing ? 'Takipten Çık' : 'Takip Et'}
                 </Text>
-            }
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
         {/* Duyurular */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📢 Son Duyurular</Text>
-          <Text style={styles.cardItem}>• Bahar şenlikleri 24 Nisan’da başlıyor!</Text>
-          <Text style={styles.cardItem}>• Yüz yüze eğitime geçiş duyurusu yayımlandı.</Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="megaphone" size={24} color="#f75c5b" />
+            <Text style={styles.cardTitle}>Son Duyurular</Text>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardItem}>• Bahar şenlikleri 24 Nisan'da başlıyor!</Text>
+            <Text style={styles.cardItem}>• Yüz yüze eğitime geçiş duyurusu yayımlandı.</Text>
+          </View>
         </View>
 
-        {/* FORUM ÖRNEKLERİ – buraya tıklayınca ForumScreen’e geçiş */}
+        {/* Forum */}
         <TouchableOpacity
           style={styles.card}
           onPress={() => navigation.navigate('Forum', { universiteId: uniId })}
         >
-          <Text style={styles.cardTitle}>💬 Forum</Text>
-          <Text style={styles.cardItemSmall}>
-            Bu üniversitenin forum başlıklarını görüntüle
-          </Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="chatbubbles" size={24} color="#f75c5b" />
+            <Text style={styles.cardTitle}>Forum</Text>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardItemSmall}>
+              Bu üniversitenin forum başlıklarını görüntüle
+            </Text>
+            <View style={styles.forumArrow}>
+              <Ionicons name="arrow-forward" size={20} color="#f75c5b" />
+            </View>
+          </View>
         </TouchableOpacity>
 
         {/* Fakülteler */}
-        <Text style={styles.sectionHeader}>Fakülteler</Text>
-        {loadingFac ? (
-          <ActivityIndicator color="#fff" size="large"/>
-        ) : faculties.map(f => (
-          <TouchableOpacity
-            key={f.fakulteid}
-            style={styles.listItem}
-            onPress={() => navigation.push('FacultyDetail', { universite, faculty: f })}
-          >
-            <Text style={styles.itemText}>{f.fakulteadi}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff"/>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="school" size={24} color="#fff" />
+            <Text style={styles.sectionTitle}>Fakülteler</Text>
+          </View>
+          {loadingFac ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color="#fff" size="large"/>
+            </View>
+          ) : (
+            faculties.map(f => (
+              <TouchableOpacity
+                key={f.fakulteid}
+                style={styles.listItem}
+                onPress={() => navigation.push('FacultyDetail', { universite, faculty: f })}
+              >
+                <Text style={styles.itemText}>{f.fakulteadi}</Text>
+                <Ionicons name="chevron-forward" size={20} color="#fff"/>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
       </ScrollView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1 },
-  content:        { padding: 20 },
-  title:          { color: '#fff', fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
-  subTitle:       { color: '#fff', fontSize: 16, textAlign: 'center', marginBottom: 16 },
-  statsRow:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginBottom: 20 },
-  stat:           { flexDirection: 'row', alignItems: 'center' },
-  statText:       { color: '#fff', fontSize: 14, marginLeft: 4 },
-  followBtn:      { paddingVertical: 6, paddingHorizontal: 12, backgroundColor: '#fff', borderRadius: 20 },
-  followingBtn:   { backgroundColor: '#444' },
-  followText:     { color: '#f75c5b', fontWeight: '600' },
-  card:           { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 12, elevation: 3 },
-  cardTitle:      { fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#f75c5b' },
-  cardItem:       { fontSize: 14, color: '#444', marginBottom: 4 },
-  cardItemSmall:  { fontSize: 13, color: '#444', marginBottom: 4 },
-  sectionHeader:  { color: '#fff', fontSize: 18, fontWeight: '600', marginTop: 16, marginBottom: 8 },
-  listItem:       { flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, marginBottom: 8 },
-  itemText:       { flex: 1, color: '#fff', fontSize: 16 },
+  container: { 
+    flex: 1,
+  },
+  content: { 
+    padding: 24,
+    paddingTop: 50,
+  },
+  headerContainer: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  title: { 
+    color: '#fff', 
+    fontSize: 32, 
+    fontWeight: '700', 
+    textAlign: 'center', 
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    letterSpacing: 0.5,
+  },
+  subTitle: { 
+    color: '#fff', 
+    fontSize: 18, 
+    textAlign: 'center', 
+    opacity: 0.9,
+    fontWeight: '500',
+    letterSpacing: 0.5,
+  },
+  statsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+  },
+  statsRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-around', 
+    marginBottom: 16,
+  },
+  stat: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  statText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    marginLeft: 8,
+    fontWeight: '600',
+  },
+  followBtn: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  followingBtn: { 
+    backgroundColor: '#E9ECEF',
+  },
+  followIcon: {
+    marginRight: 8,
+  },
+  followText: { 
+    color: '#f75c5b', 
+    fontWeight: '700',
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  followingText: { 
+    color: '#666',
+  },
+  card: { 
+    backgroundColor: '#fff', 
+    borderRadius: 20, 
+    padding: 20, 
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardTitle: { 
+    fontSize: 20, 
+    fontWeight: '700', 
+    color: '#f75c5b',
+    letterSpacing: 0.5,
+    marginLeft: 12,
+  },
+  cardContent: {
+    position: 'relative',
+  },
+  cardItem: { 
+    fontSize: 15, 
+    color: '#2D3436', 
+    marginBottom: 12,
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+  cardItemSmall: { 
+    fontSize: 15, 
+    color: '#666', 
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+  forumArrow: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    backgroundColor: 'rgba(247, 92, 91, 0.1)',
+    padding: 8,
+    borderRadius: 12,
+  },
+  sectionContainer: {
+    marginTop: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: { 
+    color: '#fff', 
+    fontSize: 24, 
+    fontWeight: '700', 
+    marginLeft: 12,
+    letterSpacing: 0.5,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  listItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 16, 
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', 
+    borderRadius: 16, 
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  itemText: { 
+    flex: 1, 
+    color: '#fff', 
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
 });
