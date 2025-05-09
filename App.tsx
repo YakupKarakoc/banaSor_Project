@@ -5,43 +5,50 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 
 // Auth / onboarding / main
-import Login from './src/screens/Login'
-import Signup from './src/screens/Signup'
-import VerifyScreen from './src/screens/VerifyScreen'
+import Login from './src/screens/Giris_islemleri/Login'
+import Signup from './src/screens/Giris_islemleri/Signup'
+import VerifyScreen from './src/screens/Giris_islemleri/VerifyScreen'
 import Home from './src/screens/Home'
 
 // Üniversite & profile
-import UniversitelerListesi from './src/screens/UniversitelerListesi'
-import UniversiteDetay from './src/screens/UniversiteDetay'
+import UniversitelerListesi from './src/screens/Universty_sayfasi/UniversitelerListesi'
+import UniversiteDetay from './src/screens/Universty_sayfasi/UniversiteDetay'
 import Favoriler from './src/screens/Favoriler'
 import ProfileScreen from './src/screens/ProfileScreen'
 
 // Kayıt tamamlama
-import StudentComplete from './src/screens/StudentComplete'
-import GraduateStart from './src/screens/GraduateStart'
-import GraduateComplete from './src/screens/GraduateComplete'
-import GraduateVerify from './src/screens/GraduateVerify'
+import StudentComplete from './src/screens/Giris_islemleri/StudentComplete'
+import GraduateStart from './src/screens/Giris_islemleri/GraduateStart'
+import GraduateComplete from './src/screens/Giris_islemleri/GraduateComplete'
+import GraduateVerify from './src/screens/Giris_islemleri/GraduateVerify'
 
 // Fakülte / bölüm
-import FacultyList from './src/screens/FacultyList'
-import DepartmentList from './src/screens/DepartmentList'
-import FacultyDetail from './src/screens/FacultyDetail'
-import DepartmentDetail from './src/screens/DepartmentDetail'
+import FacultyList from './src/screens/Fakulte_sayfasi/FacultyList'
+import DepartmentList from './src/screens/Bolum_sayfasi/DepartmentList'
+import FacultyDetail from './src/screens/Fakulte_sayfasi/FacultyDetail'
+import DepartmentDetail from './src/screens/Bolum_sayfasi/DepartmentDetail'
 
 // Soru-Cevap akışı
 import TopicListScreen from './src/screens/TopicListScreen'
 import KonularScreen from './src/screens/KonularScreen'
-import QuestionListScreen from './src/screens/QuestionListScreen'
-import NewQuestionScreen from './src/screens/NewQuestionScreen'
-import QuestionDetailScreen from './src/screens/QuestionDetailScreen'
+import QuestionListScreen from './src/screens/Universty_sayfasi/QuestionListScreen'
+import NewQuestionScreen from './src/screens/Universty_sayfasi/NewQuestionScreen'
+import QuestionDetailScreen from './src/screens/Universty_sayfasi/QuestionDetailScreen'
 
+// admin
+import AdminDashboard from './src/screens/admin/AdminDashboard'
+import UniversiteYonetim from './src/screens/admin/UniversiteYonetim'
+import KullaniciYonetim from './src/screens/admin/KullaniciYonetim'
+import GeriBildirimler from './src/screens/admin/GeriBildirimler'
+import SoruYonetim from './src/screens/admin/SoruYonetim'
+import FakulteYonetim from './src/screens/admin/FakulteYonetim'
 
 
 // Forum akışı
-import ForumScreen from './src/screens/ForumScreen'
-import NewForumScreen from './src/screens/NewForumScreen'
-import ForumDetailScreen from './src/screens/ForumDetailScreen';
-import FacultyForumScreen from './src/screens/FacultyForumScreen'
+import ForumScreen from './src/screens/Universty_sayfasi/ForumScreen'
+import NewForumScreen from './src/screens/Universty_sayfasi/NewForumScreen'
+import ForumDetailScreen from './src/screens/Universty_sayfasi/ForumDetailScreen';
+import FacultyForumScreen from './src/screens/Fakulte_sayfasi/FacultyForumScreen'
 
 const Stack = createStackNavigator()
 
@@ -76,6 +83,15 @@ export default function App() {
         <Stack.Screen name="DepartmentList" component={DepartmentList} />
         <Stack.Screen name="FacultyDetail" component={FacultyDetail} />
         <Stack.Screen name="DepartmentDetail" component={DepartmentDetail} />
+      
+        {/* admin */}
+        <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+        <Stack.Screen name="UniversiteYonetim" component={UniversiteYonetim} />
+        <Stack.Screen name="KullaniciYonetim" component={KullaniciYonetim} />
+        <Stack.Screen name="GeriBildirimler" component={GeriBildirimler} />
+        <Stack.Screen name="SoruYonetim" component={SoruYonetim} />
+        <Stack.Screen name="FakulteYonetim" component={FakulteYonetim} />
+        
 
         {/* Soru-Cevap */}
         <Stack.Screen name="Topics" component={TopicListScreen} />

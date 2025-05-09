@@ -81,8 +81,8 @@ export default function Signup() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <LinearGradient colors={['#FF8C00', '#FF3D00']} style={styles.header}>
-        <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
-        <Text style={styles.headerText}>BanaSor’a Hoş Geldiniz!</Text>
+        <Image source={require('../../assets/images/banaSor_logo.jpg')} style={styles.logo} />
+        <Text style={styles.headerText}>BanaSor'a Hoş Geldiniz!</Text>
       </LinearGradient>
       <Animated.View
         style={[

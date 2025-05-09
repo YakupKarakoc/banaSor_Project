@@ -80,7 +80,9 @@ const HomeScreen = () => {
   return (
     <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.gradientContainer}>
       <Animatable.View animation="fadeInDown" duration={800} style={styles.header}>
-        <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
+        <View style={styles.logoShadow}>
+          <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo} />
+        </View>
         <View style={styles.headerText}>
           <Text style={styles.welcomeText}>Hoş Geldin,</Text>
           <Text style={styles.usernameText}>{username}!</Text>
@@ -89,22 +91,22 @@ const HomeScreen = () => {
           style={styles.profileIconWrapper}
           onPress={() => navigation.navigate('Profile', { user })}
         >
-          <Ionicons name="person-circle-outline" size={42} color="#fff" />
+          <Ionicons name="person-circle-outline" size={38} color="#fff" />
         </TouchableOpacity>
       </Animatable.View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Animatable.View
           animation="fadeInUp"
           duration={800}
           delay={200}
           style={styles.searchContainer}
         >
-          <Ionicons name="search-outline" size={20} color="#777" style={styles.searchIcon} />
+          <Ionicons name="search-outline" size={20} color="#f75c5b" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Üniversite veya kullanıcı ara..."
-            placeholderTextColor="#999"
+            placeholderTextColor="#bbb"
             value={searchValue}
             onChangeText={setSearchValue}
           />
@@ -116,14 +118,15 @@ const HomeScreen = () => {
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={item.onPress}
-                activeOpacity={0.7}
+                activeOpacity={0.85}
               >
-                <Ionicons
-                  name={item.icon}
-                  size={24}
-                  color="#f75c5b"
-                  style={{ marginRight: 12 }}
-                />
+                <View style={styles.menuIconCircle}>
+                  <Ionicons
+                    name={item.icon}
+                    size={22}
+                    color="#fff"
+                  />
+                </View>
                 <Text style={styles.menuText}>{item.label}</Text>
               </TouchableOpacity>
             </Animatable.View>
@@ -131,8 +134,8 @@ const HomeScreen = () => {
         </View>
 
         <Animatable.View animation="pulse" iterationCount="infinite" duration={3000}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
+            <Ionicons name="log-out-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
             <Text style={styles.logoutText}>Çıkış Yap</Text>
           </TouchableOpacity>
         </Animatable.View>
@@ -149,26 +152,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff'
   },
   header: {
-    marginTop: 50,
-    marginHorizontal: 24,
-    marginBottom: 25,
+    marginTop: 36,
+    marginHorizontal: 18,
+    marginBottom: 18,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
   },
-  logo: {
-    borderRadius: 30,
-    width: 55,
-    height: 55,
-    resizeMode: 'contain',
-    marginRight: 15,
+  logoShadow: {
+    borderRadius: 32,
     backgroundColor: '#fff',
     padding: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.10,
+    shadowRadius: 10,
+    elevation: 6,
+    marginRight: 12,
+  },
+  logo: {
+    borderRadius: 24,
+    width: 44,
+    height: 44,
+    resizeMode: 'contain',
+    backgroundColor: '#fff',
   },
   headerText: { 
     flex: 1, 
@@ -176,92 +183,111 @@ const styles = StyleSheet.create({
   },
   welcomeText: { 
     color: '#fff', 
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
-    opacity: 0.9,
+    opacity: 0.95,
+    marginBottom: 1,
   },
   usernameText: { 
     color: '#fff', 
-    fontSize: 22, 
+    fontSize: 20, 
     fontWeight: '700', 
-    marginTop: 4,
     textShadowColor: 'rgba(0, 0, 0, 0.1)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   profileIconWrapper: { 
-    padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    marginLeft: 10,
+    padding: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 18,
+    marginLeft: 8,
   },
   scrollContent: { 
-    paddingHorizontal: 24, 
-    paddingBottom: 40 
+    paddingHorizontal: 16, 
+    paddingBottom: 28 
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 30,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginBottom: 25,
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 18,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowRadius: 8,
+    elevation: 4,
   },
   searchIcon: { 
-    marginRight: 12,
-    color: '#666'
+    marginRight: 10,
+    color: '#f75c5b',
   },
   searchInput: { 
     flex: 1, 
-    fontSize: 16, 
+    fontSize: 15, 
     color: '#333',
     fontWeight: '500',
   },
   menuContainer: { 
-    marginBottom: 25 
+    marginBottom: 18 
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    padding: 18,
-    borderRadius: 20,
-    marginBottom: 12,
+    padding: 13,
+    borderRadius: 16,
+    marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: 'rgba(0,0,0,0.03)',
+  },
+  menuIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f75c5b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    shadowColor: '#f75c5b',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.10,
+    shadowRadius: 4,
+    elevation: 2,
   },
   menuText: { 
-    fontSize: 17, 
+    fontSize: 15, 
     fontWeight: '600', 
     color: '#2D3436',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    padding: 16,
+    backgroundColor: '#f75c5b',
+    borderRadius: 16,
+    padding: 12,
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#f75c5b',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 3,
   },
   logoutText: { 
-    fontSize: 17, 
-    fontWeight: '600', 
+    fontSize: 15, 
+    fontWeight: '700', 
     color: '#fff',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
 });

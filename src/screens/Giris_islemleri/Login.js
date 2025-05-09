@@ -134,7 +134,7 @@ const handleLogin = async () => {
         >
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/images/banaSor_logo.jpg')}
+              source={require('../../assets/images/banaSor_logo.jpg')}
               style={styles.logo}
             />
           </View>
