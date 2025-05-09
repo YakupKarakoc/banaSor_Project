@@ -29,7 +29,7 @@ export default function UniversiteDetay() {
   const [followerCount, setFollowerCount] = useState(universite.takipciSayisi ?? 0);
   const [loadingFollow, setLoadingFollow] = useState(false);
 
-  // 1) Fakülteleri çek
+  // Fakülteleri çek
   useEffect(() => {
     axios.get(`${BASE_URL}/api/education/faculty`, {
       params: { universiteId: uniId, aktifMi: true },
@@ -39,7 +39,7 @@ export default function UniversiteDetay() {
     .finally(() => setLoadingFac(false));
   }, [uniId]);
 
-  // 2) Takip durumunu ve sayısını çek
+  // Takip durumunu ve sayısını çek
   useEffect(() => {
     axios.get(`${BASE_URL}/api/takip/takip-durumu/${uniId}`)
       .then(res => setIsFollowing(res.data.takipEdiyorMu))
@@ -49,7 +49,7 @@ export default function UniversiteDetay() {
       .catch(() => {});
   }, [uniId]);
 
-  // 3) Takip / takibi bırak
+  // Takip / takibi bırak
   const toggleFollow = async () => {
     setLoadingFollow(true);
     try {
@@ -103,14 +103,14 @@ export default function UniversiteDetay() {
           </TouchableOpacity>
         </View>
 
-        {/* Duyurular */}
+        {/* Son Duyurular */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>📢 Son Duyurular</Text>
           <Text style={styles.cardItem}>• Bahar şenlikleri 24 Nisan’da başlıyor!</Text>
           <Text style={styles.cardItem}>• Yüz yüze eğitime geçiş duyurusu yayımlandı.</Text>
         </View>
 
-        {/* FORUM ÖRNEKLERİ – buraya tıklayınca ForumScreen’e geçiş */}
+        {/* Forum Butonu */}
         <TouchableOpacity
           style={styles.card}
           onPress={() => navigation.navigate('Forum', { universiteId: uniId })}
@@ -118,6 +118,17 @@ export default function UniversiteDetay() {
           <Text style={styles.cardTitle}>💬 Forum</Text>
           <Text style={styles.cardItemSmall}>
             Bu üniversitenin forum başlıklarını görüntüle
+          </Text>
+        </TouchableOpacity>
+
+        {/* Sorular Butonu */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => navigation.navigate('QuestionList', { universiteId: uniId })}
+        >
+          <Text style={styles.cardTitle}>❓ Sorular</Text>
+          <Text style={styles.cardItemSmall}>
+            Bu üniversitenin sorularını görüntüle
           </Text>
         </TouchableOpacity>
 

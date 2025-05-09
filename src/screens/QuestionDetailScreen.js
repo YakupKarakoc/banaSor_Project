@@ -21,13 +21,12 @@ const BASE = 'http://10.0.2.2:3000';
 
 export default function QuestionDetailScreen() {
   const { soruId } = useRoute().params;
-  const [question, setQuestion] = useState(null);
-  const [answers, setAnswers]   = useState([]);
+  const [question, setQuestion]   = useState(null);
+  const [answers, setAnswers]     = useState([]);
   const [newAnswer, setNewAnswer] = useState('');
-  const [loading, setLoading]   = useState(true);
-  const [posting, setPosting]   = useState(false);
+  const [loading, setLoading]     = useState(true);
+  const [posting, setPosting]     = useState(false);
 
-  // Verileri çek
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -46,15 +45,10 @@ export default function QuestionDetailScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [soruId]);
+  useEffect(() => { fetchData(); }, [soruId]);
 
-  // Yeni cevap ekle
   const handleAddAnswer = async () => {
-    if (!newAnswer.trim()) {
-      return Alert.alert('Hata', 'Lütfen bir cevap girin.');
-    }
+    if (!newAnswer.trim()) return Alert.alert('Hata', 'Lütfen bir cevap girin.');
     setPosting(true);
     try {
       await axios.post(`${BASE}/api/soru/cevapOlustur`, {
@@ -80,14 +74,14 @@ export default function QuestionDetailScreen() {
   }
 
   return (
-    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
+    <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS==='ios'?'padding':'height'}
         style={styles.flex}
       >
         <FlatList
           data={answers}
-          keyExtractor={(item) => item.cevapId.toString()}
+          keyExtractor={a => a.cevapId.toString()}
           ListHeaderComponent={() => (
             <View style={styles.header}>
               <Text style={styles.questionText}>{question.icerik}</Text>
@@ -103,21 +97,16 @@ export default function QuestionDetailScreen() {
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.cardText}>{item.icerik}</Text>
-              <View style={styles.cardFooter}>
-                <Text style={styles.metaSmall}>
-                  — {item.cevaplayanKullaniciAdi} ·{' '}
-                  {new Date(item.olusturmaTarihi).toLocaleString('tr-TR')}
-                </Text>
-              </View>
+              <Text style={styles.metaSmall}>
+                — {item.cevaplayanKullaniciAdi} ·{' '}
+                {new Date(item.olusturmaTarihi).toLocaleString('tr-TR')}
+              </Text>
             </View>
           )}
-          ListEmptyComponent={
-            <Text style={styles.empty}>Henüz cevap yok, ilk siz yazın!</Text>
-          }
+          ListEmptyComponent={<Text style={styles.empty}>Henüz cevap yok.</Text>}
           contentContainerStyle={styles.listContent}
         />
 
-        {/* Footer: Yeni Cevap */}
         <View style={styles.footer}>
           <TextInput
             style={styles.input}
@@ -143,29 +132,20 @@ export default function QuestionDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex:           { flex: 1 },
-  container:      { flex: 1 },
+  flex:           { flex:1 },
+  container:      { flex:1 },
   loader:         { flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#f75c5b' },
-  listContent:    { padding: 16, paddingBottom: 100 },
-  header:         { marginBottom: 12 },
-  questionText:   { fontSize: 18, fontWeight: '600', color:'#fff' },
-  meta:           { fontSize: 12, color:'#eee', marginTop: 4 },
-  answerCount:    { fontSize: 14, color:'#fff', marginTop: 8, fontStyle:'italic' },
-  card:           { backgroundColor:'#fff', borderRadius:8, padding:12, marginVertical:6 },
+  listContent:    { padding:16, paddingBottom:100 },
+  header:         { marginBottom:12, paddingHorizontal:16 },
+  questionText:   { fontSize:18, fontWeight:'600', color:'#fff' },
+  meta:           { fontSize:12, color:'#eee', marginTop:4 },
+  answerCount:    { fontSize:14, color:'#fff', marginTop:8, fontStyle:'italic' },
+  card:           { backgroundColor:'#fff', borderRadius:8, padding:12, marginVertical:6, marginHorizontal:16 },
   cardText:       { fontSize:16, color:'#333' },
-  cardFooter:     { marginTop: 8 },
-  metaSmall:      { fontSize:12, color:'#555' },
+  metaSmall:      { fontSize:12, color:'#555', marginTop:4 },
   empty:          { textAlign:'center', color:'#fff', marginTop:20, opacity:0.8 },
-  footer:         {
-    position:'absolute', bottom:0, left:0, right:0,
-    flexDirection:'row', alignItems:'center',
-    padding:12, backgroundColor:'rgba(0,0,0,0.1)'
-  },
-  input:          {
-    flex:1, backgroundColor:'#fff',
-    borderRadius:20, paddingHorizontal:16,
-    paddingVertical:8, marginRight:8, maxHeight:100
-  },
-  sendBtn:        { backgroundColor:'#fff', borderRadius:20, paddingHorizontal:16, paddingVertical:10 },
+  footer:         { position:'absolute', bottom:0, left:0, right:0, flexDirection:'row', padding:12, backgroundColor:'rgba(0,0,0,0.1)' },
+  input:          { flex:1, backgroundColor:'#fff', borderRadius:20, paddingHorizontal:16, paddingVertical:8, marginRight:8, maxHeight:100 },
+  sendBtn:        { backgroundColor:'#fff', borderRadius:20, justifyContent:'center', paddingHorizontal:16 },
   sendText:       { color:'#f75c5b', fontWeight:'600' },
 });

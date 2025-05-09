@@ -1,4 +1,3 @@
-// src/screens/KonularScreen.js
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -16,12 +15,16 @@ export default function KonularScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`${BASE_URL}/api/soru/konu/getir`)
-      .then(res => setKonular(res.data))
-      .catch(err => {
+    (async () => {
+      try {
+        const res = await axios.get(`${BASE_URL}/api/soru/konu/getir`);
+        setKonular(res.data);
+      } catch (err) {
         console.error('Konular yüklenirken hata:', err);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   if (loading) {
@@ -37,13 +40,12 @@ export default function KonularScreen() {
       <FlatList
         data={konular}
         keyExtractor={(item, index) => {
-          // Postgres genelde sütunları küçük harfe çevirir
           const id = item.konuId ?? item.konuid ?? index;
           return id.toString();
         }}
         renderItem={({ item }) => (
           <Text style={styles.item}>
-            {item.ad ?? item.baslik ?? '—'}
+            {item.ad ?? '—'}
           </Text>
         )}
         ItemSeparatorComponent={() => <View style={styles.sep} />}

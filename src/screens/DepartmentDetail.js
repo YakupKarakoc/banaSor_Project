@@ -1,16 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import axios from 'axios';
+
+const BASE_URL = 'http://10.0.2.2:3000';
 
 export default function DepartmentDetail() {
   const { universite, faculty, department } = useRoute().params;
+  const navigation = useNavigation();
+  const [loadingNews, setLoadingNews] = useState(false);
 
   return (
     <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
@@ -18,24 +25,49 @@ export default function DepartmentDetail() {
         {/* Header */}
         <Text style={styles.title}>{department.bolumadi}</Text>
         <Text style={styles.subTitle}>
-          {faculty.fakulteadi} • {universite.universiteadi}
+          @ {faculty.fakulteadi} • {universite.universiteadi}
         </Text>
 
         {/* Announcements */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📢 Duyurular</Text>
-          <Text style={styles.cardItem}>
+          <Text style={styles.cardTitle}>📢 Son Duyurular</Text>
+          <Text style={styles.cardItemSmall}>
             • Staj başvuru tarihi duyurusu.
           </Text>
         </View>
 
-        {/* Forum */}
-        <View style={styles.card}>
+        {/* Forum ve Sorular */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() =>
+            navigation.navigate('Forum', {
+              universiteId: universite.universiteid,
+              fakulteId: faculty.fakulteid,
+              bolumId: department.bolumid,
+            })
+          }
+        >
           <Text style={styles.cardTitle}>💬 Forum</Text>
-          <Text style={styles.cardItem}>
-            Soru: Staj yerleri nereden öğrenilir?
+          <Text style={styles.cardItemSmall}>
+            Bu bölümün forum başlıklarını görüntüle
           </Text>
-        </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() =>
+            navigation.navigate('QuestionList', {
+              universiteId: universite.universiteid,
+              fakulteId: faculty.fakulteid,
+              bolumId: department.bolumid,
+            })
+          }
+        >
+          <Text style={styles.cardTitle}>❓ Sorular</Text>
+          <Text style={styles.cardItemSmall}>
+            Bu bölümün sorularını görüntüle
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
   );
@@ -46,14 +78,14 @@ const styles = StyleSheet.create({
   content: { padding: 20 },
   title: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 4,
   },
   subTitle: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -70,8 +102,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     color: '#f75c5b',
   },
-  cardItem: {
-    fontSize: 14,
+  cardItemSmall: {
+    fontSize: 13,
     color: '#444',
+    marginBottom: 4,
   },
 });

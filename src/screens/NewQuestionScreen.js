@@ -10,7 +10,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import axios from 'axios';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -30,7 +30,8 @@ export default function NewQuestionScreen() {
 
   // 1) Konuları çek
   useEffect(() => {
-    axios.get(`${BASE}/api/soru/konu/getir`)
+    axios
+      .get(`${BASE}/api/soru/konu/getir`)           // <- arka tırnak eklendi
       .then(res => setKonular(res.data))
       .catch(err => {
         console.error(err);
@@ -48,23 +49,24 @@ export default function NewQuestionScreen() {
       return Alert.alert('Hata', 'Sorunuzu girin');
     }
     setPosting(true);
-    axios.post(`${BASE}/api/soru/soruOlustur`, {
-      universiteId,
-      fakulteId,
-      bolumId,
-      konuId: selectedKonu,     // artık konuid gönderiyoruz
-      icerik: icerik.trim()
-    })
-    .then(() => {
-      Alert.alert('Başarılı', 'Soru oluşturuldu.', [
-        { text: 'Tamam', onPress: () => navigation.goBack() }
-      ]);
-    })
-    .catch(err => {
-      console.error(err);
-      Alert.alert('Hata', 'Soru oluşturulamadı');
-    })
-    .finally(() => setPosting(false));
+    axios
+      .post(`${BASE}/api/soru/soruOlustur`, {       // <- arka tırnak eklendi
+        universiteId,
+        fakulteId,
+        bolumId,
+        konuId: selectedKonu, // artık konuid gönderiyoruz
+        icerik: icerik.trim(),
+      })
+      .then(() => {
+        Alert.alert('Başarılı', 'Soru oluşturuldu.', [
+          { text: 'Tamam', onPress: () => navigation.goBack() },
+        ]);
+      })
+      .catch(err => {
+        console.error(err);
+        Alert.alert('Hata', 'Soru oluşturulamadı');
+      })
+      .finally(() => setPosting(false));
   };
 
   if (loading) {
@@ -76,29 +78,29 @@ export default function NewQuestionScreen() {
   }
 
   return (
-    <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
+    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS==='ios'?'padding':'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.inner}>
-          <Text style={styles.title}>Yeni Soru Oluştur</Text>
+          <Text style={styles.title}>Yeni Soru Oluştur</Text>
 
-          <Text style={styles.label}>Konu Seçin</Text>
+          <Text style={styles.label}>Konu Seçin</Text>
           <View style={styles.pickerContainer}>
             {konular.map(k => (
               <TouchableOpacity
-                key={k.konuid.toString()}            // <-- burada da 'konuid'
+                key={k.konuid.toString()}
                 style={[
                   styles.konuItem,
-                  selectedKonu === k.konuid && styles.konuItemSelected
+                  selectedKonu === k.konuid && styles.konuItemSelected,
                 ]}
                 onPress={() => setSelectedKonu(k.konuid)}
               >
                 <Text
                   style={[
                     styles.konuText,
-                    selectedKonu === k.konuid && styles.konuTextSelected
+                    selectedKonu === k.konuid && styles.konuTextSelected,
                   ]}
                 >
                   {k.ad}
@@ -122,9 +124,11 @@ export default function NewQuestionScreen() {
             onPress={handleSubmit}
             disabled={posting}
           >
-            {posting
-              ? <ActivityIndicator color="#f75c5b"/>
-              : <Text style={styles.btnText}>Gönder</Text>}
+            {posting ? (
+              <ActivityIndicator color="#f75c5b" />
+            ) : (
+              <Text style={styles.btnText}>Gönder</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -133,57 +137,47 @@ export default function NewQuestionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
+  container: { flex: 1 },
   loader: {
-    flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#f75c5b'
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f75c5b',
   },
-  inner: {
-    padding: 16
-  },
+  inner: { padding: 16 },
   title: {
-    fontSize: 20, fontWeight: 'bold', color:'#fff', textAlign:'center', marginBottom:20
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  label: {
-    fontSize: 14, fontWeight:'600', color:'#fff', marginBottom:8
-  },
-  pickerContainer: {
-    flexDirection:'row', flexWrap:'wrap', marginBottom:16
-  },
+  label: { fontSize: 14, fontWeight: '600', color: '#fff', marginBottom: 8 },
+  pickerContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
   konuItem: {
-    backgroundColor:'rgba(255,255,255,0.2)',
-    paddingHorizontal:12,
-    paddingVertical:6,
-    borderRadius:20,
-    margin:4
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    margin: 4,
   },
-  konuItemSelected: {
-    backgroundColor:'#fff'
-  },
-  konuText: {
-    color:'#fff'
-  },
-  konuTextSelected: {
-    color:'#f75c5b',
-    fontWeight:'bold'
-  },
+  konuItemSelected: { backgroundColor: '#fff' },
+  konuText: { color: '#fff' },
+  konuTextSelected: { color: '#f75c5b', fontWeight: 'bold' },
   input: {
-    backgroundColor:'#fff',
-    borderRadius:8,
-    height:120,
-    padding:12,
-    textAlignVertical:'top',
-    marginBottom:20,
-    color:'#333'
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    height: 120,
+    padding: 12,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+    color: '#333',
   },
   button: {
-    backgroundColor:'#fff',
-    paddingVertical:14,
-    borderRadius:25,
-    alignItems:'center'
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    borderRadius: 25,
+    alignItems: 'center',
   },
-  btnText: {
-    color:'#f75c5b', fontWeight:'600', fontSize:16
-  }
+  btnText: { color: '#f75c5b', fontWeight: '600', fontSize: 16 },
 });
