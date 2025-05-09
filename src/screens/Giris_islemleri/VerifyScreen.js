@@ -54,73 +54,88 @@ export default function VerifyScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
+      <View style={styles.loaderModern}>
         <ActivityIndicator size="large" color="#fff" />
       </View>
     );
   }
 
   return (
-    <LinearGradient colors={['#FF8C00', '#FF3D00']} style={styles.container}>
-      <Text style={styles.title}>Mail Doğrulama</Text>
-      <Text style={styles.info}>{email} adresine gönderilen kodu girin.</Text>
+    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.containerModern}>
+      <Text style={styles.titleModern}>Mail Doğrulama</Text>
+      <Text style={styles.infoModern}>{email} adresine gönderilen kodu girin.</Text>
       <TextInput
-        style={styles.input}
+        style={styles.inputModern}
         placeholder="Doğrulama Kodu"
-        placeholderTextColor="#999"
+        placeholderTextColor="#f75c5b"
         keyboardType="number-pad"
         value={kod}
         onChangeText={setKod}
       />
-      <TouchableOpacity style={styles.button} onPress={handleVerify}>
-        <Text style={styles.btnText}>Doğrula</Text>
+      <TouchableOpacity style={styles.buttonModern} onPress={handleVerify}>
+        <Text style={styles.btnTextModern}>Doğrula</Text>
       </TouchableOpacity>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  containerModern: {
     flex: 1,
-    padding: 20,
+    padding: 24,
     justifyContent: 'center',
-    backgroundColor: '#FF3D00',
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  titleModern: {
+    fontSize: 24,
+    fontWeight: '900',
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
+    textShadowColor: 'rgba(0,0,0,0.18)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+    letterSpacing: 0.5,
   },
-  info: {
-    fontSize: 14,
+  infoModern: {
+    fontSize: 15,
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 22,
+    opacity: 0.92,
   },
-  input: {
+  inputModern: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-    fontSize: 16,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 22,
+    fontSize: 17,
+    shadowColor: '#f75c5b',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  button: {
+  buttonModern: {
     backgroundColor: '#fff',
     borderRadius: 25,
-    paddingVertical: 14,
+    paddingVertical: 15,
     alignItems: 'center',
+    shadowColor: '#f75c5b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.13,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  btnText: {
-    color: '#FF3D00',
-    fontWeight: '600',
-    fontSize: 16,
+  btnTextModern: {
+    color: '#f75c5b',
+    fontWeight: '800',
+    fontSize: 17,
+    letterSpacing: 0.2,
   },
-  loader: {
+  loaderModern: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FF3D00',
+    backgroundColor: '#f75c5b',
   },
 });

@@ -129,7 +129,7 @@ const handleLogin = async () => {
       >
         {/* HEADER */}
         <LinearGradient
-          colors={['#FF8C00', '#FF3D00']}
+          colors={['#f75c5b', '#ff8a5c']}
           style={styles.header}
         >
           <View style={styles.logoContainer}>
@@ -138,7 +138,7 @@ const handleLogin = async () => {
               style={styles.logo}
             />
           </View>
-          <Text style={styles.welcome}>BanaSor'a Hoş Geldiniz!</Text>
+          <Text style={styles.welcomeModern}>BanaSor'a Hoş Geldiniz!</Text>
         </LinearGradient>
 
         {/* CARD */}
@@ -156,11 +156,11 @@ const handleLogin = async () => {
           <Text style={styles.title}>Giriş Yap</Text>
 
           <View style={styles.field}>
-            <Icon name="mail-outline" size={20} color="#AAA" style={styles.icon} />
+            <Icon name="mail-outline" size={22} color="#f75c5b" style={styles.iconModern} />
             <TextInput
-              style={styles.input}
+              style={styles.inputModern}
               placeholder="E‑posta"
-              placeholderTextColor="#AAA"
+              placeholderTextColor="#f75c5b"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
@@ -169,35 +169,35 @@ const handleLogin = async () => {
           </View>
 
           <View style={styles.field}>
-            <Icon name="lock-closed-outline" size={20} color="#AAA" style={styles.icon} />
+            <Icon name="lock-closed-outline" size={22} color="#f75c5b" style={styles.iconModern} />
             <TextInput
-              style={styles.input}
+              style={styles.inputModern}
               placeholder="Şifre"
-              placeholderTextColor="#AAA"
+              placeholderTextColor="#f75c5b"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
             />
           </View>
 
-          <Pressable style={styles.forgot} onPress={() => setModalVisible(true)}>
-            <Text style={styles.forgotText}>Şifremi unuttum?</Text>
+          <Pressable style={styles.forgotModern} onPress={() => setModalVisible(true)}>
+            <Text style={styles.forgotTextModern}>Şifremi unuttum?</Text>
           </Pressable>
 
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <Pressable
               onPressIn={onPressIn}
               onPressOut={onPressOut}
-              style={styles.button}
+              style={styles.buttonModern}
             >
-              <Text style={styles.buttonText}>Giriş Yap</Text>
+              <Text style={styles.buttonTextModern}>Giriş Yap</Text>
             </Pressable>
           </Animated.View>
 
           <View style={styles.bottom}>
             <Text style={styles.bottomText}>Hesabınız yok mu?</Text>
             <Pressable onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.bottomLink}> Kayıt Ol</Text>
+              <Text style={styles.bottomLinkModern}> Kayıt Ol</Text>
             </Pressable>
           </View>
         </Animated.View>
@@ -304,13 +304,15 @@ const styles = StyleSheet.create({
     height: 90, 
     resizeMode: 'contain' 
   },
-  welcome: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFF',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+  welcomeModern: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.18)',
     textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    textShadowRadius: 8,
+    letterSpacing: 0.5,
+    marginTop: 4,
   },
 
   card: {
@@ -345,46 +347,48 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E9ECEF',
   },
-  icon: { 
-    position: 'absolute', 
+  iconModern: {
+    position: 'absolute',
     left: 18,
-    color: '#6C757D'
+    color: '#f75c5b',
   },
-  input: {
+  inputModern: {
     flex: 1,
     fontSize: 16,
     color: '#2D3436',
     height: '100%',
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 
-  forgot: { 
-    alignSelf: 'flex-end', 
+  forgotModern: {
+    alignSelf: 'flex-end',
     marginBottom: 15,
     padding: 5,
   },
-  forgotText: { 
-    color: '#FF3D00', 
-    fontWeight: '600',
+  forgotTextModern: {
+    color: '#f75c5b',
+    fontWeight: '700',
     fontSize: 15,
+    letterSpacing: 0.1,
   },
 
-  button: {
-    backgroundColor: '#FF3D00',
+  buttonModern: {
+    backgroundColor: '#f75c5b',
     borderRadius: 30,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 25,
-    shadowColor: '#FF3D00',
+    shadowColor: '#f75c5b',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.22,
     shadowRadius: 8,
     elevation: 5,
   },
-  buttonText: { 
-    color: '#FFF', 
-    fontSize: 17, 
-    fontWeight: '700',
+  buttonTextModern: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
 
@@ -397,11 +401,12 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     fontSize: 15,
   },
-  bottomLink: { 
-    color: '#FF3D00', 
-    fontWeight: '700',
+  bottomLinkModern: {
+    color: '#ff8a5c',
+    fontWeight: '800',
     fontSize: 15,
     marginLeft: 5,
+    letterSpacing: 0.1,
   },
 
   /* Modal Styles */

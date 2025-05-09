@@ -59,20 +59,20 @@ export default function GraduateComplete({ route, navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loader}>
+      <View style={styles.loaderModern}>
         <ActivityIndicator size="large" color="#fff"/>
       </View>
     );
   }
 
   return (
-    <LinearGradient colors={['#FF8C00','#FF3D00']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.inner}>
-        <Text style={styles.title}>Mezun Kayıt</Text>
-        <Text style={styles.info}>{email} ile devam ediliyor.</Text>
+    <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.containerModern}>
+      <ScrollView contentContainerStyle={styles.innerModern}>
+        <Text style={styles.titleModern}>Mezun Kayıt</Text>
+        <Text style={styles.infoModern}>{email} ile devam ediliyor.</Text>
 
-        <Text style={styles.label}>Üniversite</Text>
-        <View style={styles.pickerBox}>
+        <Text style={styles.labelModern}>Üniversite</Text>
+        <View style={styles.pickerBoxModern}>
           <Picker selectedValue={selUni} onValueChange={setSelUni}>
             <Picker.Item label="Seçin..." value=""/>
             {unis.map(u =>
@@ -81,8 +81,8 @@ export default function GraduateComplete({ route, navigation }) {
           </Picker>
         </View>
 
-        <Text style={styles.label}>Bölüm</Text>
-        <View style={styles.pickerBox}>
+        <Text style={styles.labelModern}>Bölüm</Text>
+        <View style={styles.pickerBoxModern}>
           <Picker selectedValue={selDept} onValueChange={setSelDept}>
             <Picker.Item label="Seçin..." value=""/>
             {depts.map(d =>
@@ -92,24 +92,24 @@ export default function GraduateComplete({ route, navigation }) {
         </View>
 
         <TextInput
-          style={styles.input}
+          style={styles.inputModern}
           placeholder="Referans E-posta 1"
-          placeholderTextColor="#999"
+          placeholderTextColor="#f75c5b"
           keyboardType="email-address"
           value={ref1}
           onChangeText={setRef1}
         />
         <TextInput
-          style={styles.input}
+          style={styles.inputModern}
           placeholder="Referans E-posta 2"
-          placeholderTextColor="#999"
+          placeholderTextColor="#f75c5b"
           keyboardType="email-address"
           value={ref2}
           onChangeText={setRef2}
         />
 
-        <TouchableOpacity style={styles.button} onPress={submit}>
-          <Text style={styles.btnText}>Kaydı Tamamla</Text>
+        <TouchableOpacity style={styles.buttonModern} onPress={submit}>
+          <Text style={styles.btnTextModern}>Kaydı Tamamla</Text>
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
@@ -117,14 +117,14 @@ export default function GraduateComplete({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container:{ flex:1 },
-  loader:{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#FF3D00' },
-  inner:{ padding:20 },
-  title:{ fontSize:22, fontWeight:'bold', color:'#fff', textAlign:'center', marginBottom:8 },
-  info:{ fontSize:14, color:'#fff', textAlign:'center', marginBottom:20 },
-  label:{ color:'#fff', marginBottom:6 },
-  pickerBox:{ backgroundColor:'#fff', borderRadius:8, marginBottom:12, overflow:'hidden' },
-  input:{ backgroundColor:'#fff', borderRadius:8, paddingHorizontal:12, height:48, marginBottom:12, color:'#333' },
-  button:{ backgroundColor:'#fff', borderRadius:25, paddingVertical:14, alignItems:'center', marginTop:10 },
-  btnText:{ color:'#FF3D00', fontWeight:'600', fontSize:16 },
+  containerModern: { flex:1 },
+  loaderModern: { flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#f75c5b' },
+  innerModern: { padding:24 },
+  titleModern: { fontSize:24, fontWeight:'900', color:'#fff', textAlign:'center', marginBottom:10, textShadowColor:'rgba(0,0,0,0.18)', textShadowOffset:{width:0,height:2}, textShadowRadius:8, letterSpacing:0.5 },
+  infoModern: { fontSize:15, color:'#fff', textAlign:'center', marginBottom:22, opacity:0.92 },
+  labelModern: { color:'#fff', marginBottom:7, fontWeight:'700', fontSize:15, letterSpacing:0.1 },
+  pickerBoxModern: { backgroundColor:'#fff', borderRadius:16, marginBottom:18, overflow:'hidden', shadowColor:'#f75c5b', shadowOffset:{width:0,height:2}, shadowOpacity:0.10, shadowRadius:8, elevation:3 },
+  inputModern: { backgroundColor:'#fff', borderRadius:16, paddingHorizontal:14, height:48, marginBottom:16, color:'#2D3436', fontSize:16, shadowColor:'#f75c5b', shadowOffset:{width:0,height:2}, shadowOpacity:0.10, shadowRadius:8, elevation:2 },
+  buttonModern: { backgroundColor:'#fff', borderRadius:25, paddingVertical:15, alignItems:'center', marginTop:16, shadowColor:'#f75c5b', shadowOffset:{width:0,height:4}, shadowOpacity:0.13, shadowRadius:8, elevation:4 },
+  btnTextModern: { color:'#f75c5b', fontWeight:'800', fontSize:17, letterSpacing:0.2 },
 });

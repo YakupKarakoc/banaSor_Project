@@ -36,40 +36,40 @@ export default function GraduateVerify({ route, navigation }) {
   };
 
   if (loading) return (
-    <View style={styles.loader}><ActivityIndicator size="large" color="#fff"/></View>
+    <View style={styles.loaderModern}><ActivityIndicator size="large" color="#fff"/></View>
   );
 
   return (
-    <LinearGradient colors={['#FF8C00','#FF3D00']} style={styles.container}>
-      <Text style={styles.title}>Kodla Doğrulama</Text>
+    <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.containerModern}>
+      <Text style={styles.titleModern}>Kodla Doğrulama</Text>
       <TextInput
-        style={styles.input}
+        style={styles.inputModern}
         placeholder="Kod 1"
-        placeholderTextColor="#999"
+        placeholderTextColor="#f75c5b"
         keyboardType="number-pad"
         value={kod1}
         onChangeText={setKod1}
       />
       <TextInput
-        style={styles.input}
+        style={styles.inputModern}
         placeholder="Kod 2"
-        placeholderTextColor="#999"
+        placeholderTextColor="#f75c5b"
         keyboardType="number-pad"
         value={kod2}
         onChangeText={setKod2}
       />
-      <TouchableOpacity style={styles.button} onPress={verifyCodes}>
-        <Text style={styles.btnText}>Doğrula & Kaydı Tamamla</Text>
+      <TouchableOpacity style={styles.buttonModern} onPress={verifyCodes}>
+        <Text style={styles.btnTextModern}>Doğrula & Kaydı Tamamla</Text>
       </TouchableOpacity>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container:{ flex:1,justifyContent:'center',padding:20 },
-  loader:{ flex:1,justifyContent:'center',alignItems:'center',backgroundColor:'#FF3D00' },
-  title:{ fontSize:22,fontWeight:'bold',color:'#fff',textAlign:'center',marginBottom:20 },
-  input:{ backgroundColor:'#fff',borderRadius:8,padding:12,marginBottom:12 },
-  button:{ backgroundColor:'#fff',borderRadius:25,padding:14,alignItems:'center' },
-  btnText:{ color:'#FF3D00',fontWeight:'600' }
+  containerModern: { flex:1,justifyContent:'center',padding:24 },
+  loaderModern: { flex:1,justifyContent:'center',alignItems:'center',backgroundColor:'#f75c5b' },
+  titleModern: { fontSize:24,fontWeight:'900',color:'#fff',textAlign:'center',marginBottom:22,textShadowColor:'rgba(0,0,0,0.18)',textShadowOffset:{width:0,height:2},textShadowRadius:8,letterSpacing:0.5 },
+  inputModern: { backgroundColor:'#fff',borderRadius:16,padding:14,marginBottom:16,fontSize:17,shadowColor:'#f75c5b',shadowOffset:{width:0,height:2},shadowOpacity:0.10,shadowRadius:8,elevation:2 },
+  buttonModern: { backgroundColor:'#fff',borderRadius:25,padding:15,alignItems:'center',shadowColor:'#f75c5b',shadowOffset:{width:0,height:4},shadowOpacity:0.13,shadowRadius:8,elevation:4 },
+  btnTextModern: { color:'#f75c5b',fontWeight:'800',fontSize:16,letterSpacing:0.2 },
 });
