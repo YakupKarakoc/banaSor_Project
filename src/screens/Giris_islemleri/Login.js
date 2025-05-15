@@ -1,4 +1,5 @@
-// src/screens/LoginScreen.js
+// src/screens/Giris_islemleri/Login.js
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
@@ -20,6 +21,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
+import { saveToken } from '../../utils/auth';  // ← token saklama
+
 const LoginScreen = () => {
   const navigation = useNavigation();
 
@@ -39,7 +42,9 @@ const LoginScreen = () => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.timing(fadeAnim, {
-      toValue: 1, duration: 600, useNativeDriver: true
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
     }).start();
   }, []);
 
@@ -47,50 +52,46 @@ const LoginScreen = () => {
     Animated.spring(scaleAnim, { toValue: 0.94, useNativeDriver: true }).start();
   const onPressOut = () =>
     Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true })
-      .start(handleLogin);
+      .start(() => handleLogin());
 
   // --- LOGIN ---
-  // --- LOGIN ---
-// src/screens/LoginScreen.js
-
-const handleLogin = async () => {
-  // Admin shortcut
-  if (email === 'admin' && password === 'admin') {
-    return navigation.replace('AdminDashboard');
-  }
-
-  try {
-    const r = await axios.post(
-      'http://10.0.2.2:3000/api/auth/login',
-      {
-        email,
-        sifre: password,
-      }
-    );
-
-    if (r.data.error) {
-      return Alert.alert('Hata', r.data.error);
+  const handleLogin = async () => {
+    // Admin shortcut
+    if (email === 'admin' && password === 'admin') {
+      return navigation.replace('AdminDashboard');
     }
 
-    const token = r.data.token; 
-    const userObj = r.data.user ?? r.data;
+    try {
+      const r = await axios.post(
+        'http://10.0.2.2:3000/api/auth/login',
+        { email, sifre: password }
+      );
 
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      if (r.data.error) {
+        return Alert.alert('Hata', r.data.error);
+      }
 
-    navigation.replace('Home', { user: userObj });
+      // 1) Token'ı kaydet
+      const token   = r.data.token;
+      await saveToken(token);
 
-  } catch (e) {
-    Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
-  }
-};
+      // 2) Axios default header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
+      // 3) Home'a geç, user objesini params ile gönder
+      const userObj = r.data.user ?? r.data;
+      navigation.replace('Home', { user: userObj });
 
+    } catch (e) {
+      Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
+    }
+  };
 
   // --- ŞİFRE SIFIRLAMA ADIM 1 ---
   const sendResetCode = async () => {
     try {
       await axios.post('http://10.0.2.2:3000/api/auth/forgotPassword', { email: resetEmail });
-      Alert.alert('Kod Gönderildi', 'E‑posta kutunu kontrol et.');
+      Alert.alert('Kod Gönderildi', 'E-posta kutunu kontrol et.');
       setStep(2);
     } catch (e) {
       Alert.alert('Hata', e.response?.data?.error || e.message);
@@ -118,7 +119,9 @@ const handleLogin = async () => {
   const closeModal = () => {
     setModalVisible(false);
     setStep(1);
-    setResetEmail(''); setResetCode(''); setNewPass('');
+    setResetEmail('');
+    setResetCode('');
+    setNewPass('');
   };
 
   return (
@@ -159,7 +162,7 @@ const handleLogin = async () => {
             <Icon name="mail-outline" size={22} color="#f75c5b" style={styles.iconModern} />
             <TextInput
               style={styles.inputModern}
-              placeholder="E‑posta"
+              placeholder="E-posta"
               placeholderTextColor="#f75c5b"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -214,7 +217,7 @@ const handleLogin = async () => {
                 <>
                   <TextInput
                     style={styles.modalInput}
-                    placeholder="E‑posta adresiniz"
+                    placeholder="E-posta adresiniz"
                     placeholderTextColor="#888"
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -261,17 +264,15 @@ const handleLogin = async () => {
 
 export default LoginScreen;
 
-// (styles kodları aynı kaldı)
-
-
-
+// —————————————————————————————————————————
+//  (Aşağıda stil bloğu aynı kaldı; gerektiğinde özelleştirebilirsin)
+// —————————————————————————————————————————
 
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#F8F9FA' 
   },
-
   header: {
     height: '40%',
     borderBottomLeftRadius: 50,
@@ -314,7 +315,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 4,
   },
-
   card: {
     flex: 1,
     backgroundColor: '#FFF',
@@ -335,7 +335,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 25,
   },
-
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -360,7 +359,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.2,
   },
-
   forgotModern: {
     alignSelf: 'flex-end',
     marginBottom: 15,
@@ -372,7 +370,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: 0.1,
   },
-
   buttonModern: {
     backgroundColor: '#f75c5b',
     borderRadius: 30,
@@ -391,7 +388,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-
   bottom: { 
     flexDirection: 'row', 
     justifyContent: 'center',
@@ -408,8 +404,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     letterSpacing: 0.1,
   },
-
-  /* Modal Styles */
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

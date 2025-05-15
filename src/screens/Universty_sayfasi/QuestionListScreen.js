@@ -12,6 +12,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
+import LikeButton from '../../components/LikeButton';
 import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
 import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
@@ -107,6 +108,12 @@ export default function QuestionListScreen() {
           <Text style={styles.cardMeta}>{item.kullaniciadi}</Text>
           <Icon name="chatbubble-ellipses-outline" size={16} color="#ff8a5c" style={{ marginLeft: 12 }} />
           <Text style={styles.cardMeta}>{item.cevapsayisi} cevap</Text>
+          <LikeButton
+    soruId={item.soruid}
+    likedInit={item.kullaniciBegendiMi}   // backend’in döndürdüğü alan adı
+    countInit={item.begenisayisi}         // toplam beğeni sayısı
+    dark                                   // siyah/metin rengi uyumlu olsun
+  />
         </View>
       </TouchableOpacity>
     </Animated.View>

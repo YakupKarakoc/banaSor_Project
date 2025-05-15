@@ -39,6 +39,7 @@ export default function FacultyDetail() {
       .then(res => setDepartments(res.data))
       .catch(console.error)
       .finally(() => setLoadingDeps(false));
+
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -62,9 +63,14 @@ export default function FacultyDetail() {
           opacity: fadeAnim,
           transform: [
             { translateY: slideAnim },
-            { scale: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }
-          ]
-        }
+            {
+              scale: fadeAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.97, 1],
+              }),
+            },
+          ],
+        },
       ]}
     >
       <TouchableOpacity
@@ -126,6 +132,27 @@ export default function FacultyDetail() {
           </Text>
         </TouchableOpacity>
 
+        {/* Sorular */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() =>
+            navigation.navigate('FacultyQuestionScreen', {
+              universite,
+              faculty,
+              
+            })
+          }
+          activeOpacity={0.9}
+        >
+          <View style={styles.cardHeader}>
+            <Icon name="help-circle-outline" size={20} color="#f75c5b" style={styles.cardIcon} />
+            <Text style={styles.cardTitle}>Sorular</Text>
+          </View>
+          <Text style={styles.cardItemSmall}>
+            Bu fakülteye ait soruları görüntüle ve yeni soru sor
+          </Text>
+        </TouchableOpacity>
+
         {/* Bölümler */}
         <View style={styles.sectionHeaderRow}>
           <Icon name="layers-outline" size={20} color="#fff" style={styles.sectionIcon} />
@@ -147,25 +174,25 @@ export default function FacultyDetail() {
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1 },
-  content:        { padding: 20, paddingBottom: 30 },
-  header:         { alignItems: 'center', marginBottom: 18 },
-  headerIcon:     { marginBottom: 8 },
-  title:          { color: '#fff', fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 2, letterSpacing: 0.5 },
-  subTitle:       { color: '#fff', fontSize: 15, textAlign: 'center', marginBottom: 8, opacity: 0.9 },
-  card:           { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)' },
-  cardHeader:     { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  cardIcon:       { marginRight: 8 },
-  cardTitle:      { fontSize: 16, fontWeight: '700', color: '#f75c5b', letterSpacing: 0.3 },
-  cardItemSmall:  { fontSize: 14, color: '#666', fontWeight: '500' },
+  container: { flex: 1 },
+  content: { padding: 20, paddingBottom: 30 },
+  header: { alignItems: 'center', marginBottom: 18 },
+  headerIcon: { marginBottom: 8 },
+  title: { color: '#fff', fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 2, letterSpacing: 0.5 },
+  subTitle: { color: '#fff', fontSize: 15, textAlign: 'center', marginBottom: 8, opacity: 0.9 },
+  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  cardIcon: { marginRight: 8 },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#f75c5b', letterSpacing: 0.3 },
+  cardItemSmall: { fontSize: 14, color: '#666', fontWeight: '500' },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 10 },
-  sectionIcon:    { marginRight: 8 },
-  sectionHeader:  { color: '#fff', fontSize: 18, fontWeight: '700', letterSpacing: 0.3 },
+  sectionIcon: { marginRight: 8 },
+  sectionHeader: { color: '#fff', fontSize: 18, fontWeight: '700', letterSpacing: 0.3 },
   emptyContainer: { flex: 1, alignItems: 'center', marginTop: 16 },
-  emptyText:      { color: '#fff', fontSize: 15, opacity: 0.8 },
-  listItem:       { marginBottom: 10 },
-  departmentBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.15)', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
+  emptyText: { color: '#fff', fontSize: 15, opacity: 0.8 },
+  listItem: { marginBottom: 10 },
+  departmentBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.15)', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
   departmentIconRow: { flexDirection: 'row', alignItems: 'center' },
   departmentIcon: { marginRight: 10 },
-  itemText:       { color: '#fff', fontSize: 15, fontWeight: '600', letterSpacing: 0.2 },
+  itemText: { color: '#fff', fontSize: 15, fontWeight: '600', letterSpacing: 0.2 },
 });

@@ -1,22 +1,26 @@
-// src/screens/ForumDetailScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
   TextInput, ActivityIndicator, Alert,
   StyleSheet, KeyboardAvoidingView, Platform,
-  Animated, Dimensions
+  Animated, Dimensions,
 } from 'react-native';
 import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
-import { useRoute, useIsFocused } from '@react-navigation/native';
+import { useRoute, useIsFocused, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import ReactionButton from '../../components/ReactionButton';
 
 const { width } = Dimensions.get('window');
 const BASE = 'http://10.0.2.2:3000';
 
 export default function ForumDetailScreen() {
-  const { forumId } = useRoute().params;
-  const isFocused   = useIsFocused();
+  const route      = useRoute();
+  const navigation = useNavigation();
+  const isFocused  = useIsFocused();
+
+  // forumId güvenli alınır
+  const forumId = route?.params?.forumId;
 
   const [forum,    setForum]    = useState(null);
   const [entries,  setEntries]  = useState([]);
@@ -24,65 +28,66 @@ export default function ForumDetailScreen() {
   const [newEntry, setNewEntry] = useState('');
   const [posting,  setPosting]  = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(40));
+  const [slideAnim]= useState(new Animated.Value(40));
+
+  // forumId yoksa kullanıcıyı ana ekrana yönlendir!
+  useEffect(() => {
+    if (!forumId) {
+      Alert.alert(
+        'Hata',
+        'Forum bulunamadı. Ana sayfaya yönlendiriliyorsunuz.',
+        [{ text: 'Tamam', onPress: () => navigation.goBack() }]
+      );
+      return;
+    }
+    fetchDetail();
+    startAnim();
+  }, [forumId, isFocused]);
 
   const fetchDetail = () => {
+    if (!forumId) return;
     setLoading(true);
     axios.get(`${BASE}/api/forum/detay/${forumId}`)
       .then(res => {
         setForum(res.data);
         setEntries(res.data.entryler || []);
       })
-      .catch(err => {
-        console.error(err);
-        Alert.alert('Hata', 'Forum detayları yüklenemedi');
-      })
+      .catch(() => Alert.alert('Hata', 'Forum detayları yüklenemedi'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchDetail(); startAnimations(); }, [forumId, isFocused]);
-
-  const startAnimations = () => {
+  const startAnim = () => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 700,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 700,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim,  { toValue:1, duration:700, useNativeDriver:true }),
+      Animated.timing(slideAnim, { toValue:0, duration:700, useNativeDriver:true }),
     ]).start();
   };
 
   const handleAddEntry = () => {
-    if (!newEntry.trim()) {
-      return Alert.alert('Hata', 'Lütfen içerik girin.');
-    }
+    if (!newEntry.trim()) return Alert.alert('Hata', 'Lütfen içerik girin.');
     setPosting(true);
-    axios.post(`${BASE}/api/forum/entryEkle`, {
-      forumId,
-      icerik: newEntry.trim(),
-    })
-    .then(() => {
-      setNewEntry('');
-      fetchDetail();
-    })
-    .catch(err => {
-      console.error(err);
-      Alert.alert('Hata', 'Mesaj eklenemedi');
-    })
-    .finally(() => setPosting(false));
+    axios.post(`${BASE}/api/forum/entryEkle`, { forumId, icerik: newEntry.trim() })
+      .then(() => { setNewEntry(''); fetchDetail(); })
+      .catch(() => Alert.alert('Hata', 'Mesaj eklenemedi'))
+      .finally(() => setPosting(false));
   };
+
+  if (!forumId) {
+    return (
+      <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
+        <View style={styles.loader}>
+          <Text style={styles.loadingText}>Forum ID iletilemedi.</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
 
   if (loading || !forum) {
     return (
       <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
         <View style={styles.loader}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.loadingText}>Yükleniyor...</Text>
+          <ActivityIndicator size="large" color="#fff"/>
+          <Text style={styles.loadingText}>Yükleniyor…</Text>
         </View>
       </LinearGradient>
     );
@@ -90,75 +95,77 @@ export default function ForumDetailScreen() {
 
   const owner = forum.olusturanKullaniciAdi ?? forum.olusturankullaniciadi;
 
-  const renderItem = ({ item }) => (
-    <Animated.View
-      style={[
+  const renderItem = ({ item }) => {
+    const id   = item.entryId ?? item.entryid;
+    const like = Number(item.likeSayisi ?? item.likesayisi ?? 0);
+    const dis  = Number(item.dislikeSayisi ?? item.dislikesayisi ?? 0);
+
+    return (
+      <Animated.View style={[
         styles.card,
         {
           opacity: fadeAnim,
           transform: [
             { translateY: slideAnim },
-            { scale: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }
+            { scale: fadeAnim.interpolate({inputRange:[0,1],outputRange:[0.97,1]}) }
           ]
-        }
-      ]}
-    >
-      <View style={styles.cardContent}>
-        <View style={styles.cardHeader}>
-          <Icon name="chatbubble-ellipses-outline" size={20} color="#f75c5b" style={styles.cardIcon} />
-          <Text style={styles.cardText}>{item.icerik}</Text>
-        </View>
-        <View style={styles.cardFooter}>
-          <View style={styles.cardUserRow}>
-            <Icon name="person-outline" size={14} color="#ff8a5c" />
-            <Text style={styles.cardUser}>{item.kullaniciAdi ?? item.kullaniciadi}</Text>
+        }]}>
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Icon name="chatbubble-ellipses-outline" size={20} color="#f75c5b" style={styles.cardIcon}/>
+            <Text style={styles.cardText}>{item.icerik}</Text>
           </View>
-          <View style={styles.reactions}>
-            <Icon name="thumbs-up-outline" size={16} color="#ff8a5c" />
-            <Text style={styles.reaction}>{item.likeSayisi}</Text>
-            <Icon name="thumbs-down-outline" size={16} color="#ff8a5c" style={{ marginLeft: 8 }} />
-            <Text style={styles.reaction}>{item.dislikeSayisi}</Text>
+          <View style={styles.cardFooter}>
+            <View style={styles.userRow}>
+              <Icon name="person-outline" size={14} color="#ff8a5c"/>
+              <Text style={styles.user}>{item.kullaniciAdi ?? item.kullaniciadi}</Text>
+            </View>
+            <View style={styles.reactions}>
+              <ReactionButton type="Like" entryId={id} countInit={like}/>
+              <ReactionButton type="Dislike" entryId={id} countInit={dis}/>
+            </View>
           </View>
         </View>
-      </View>
-    </Animated.View>
-  );
+      </Animated.View>
+    );
+  };
 
   return (
     <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
+      {/* ---------- Başlık ---------- */}
       <View style={styles.header}>
-        <View style={styles.headerIconRow}>
-          <Icon name="chatbubbles-outline" size={28} color="#fff" style={styles.headerIcon} />
+        <View style={styles.headerRow}>
+          <Icon name="chatbubbles-outline" size={28} color="#fff" style={styles.headerIcon}/>
           <Text style={styles.title}>{forum.baslik}</Text>
         </View>
         <View style={styles.metaRow}>
-          <Icon name="person-outline" size={16} color="#fff" style={styles.metaIcon} />
+          <Icon name="person-outline" size={16} color="#fff"/>
           <Text style={styles.meta}>{owner}</Text>
-          <Icon name="time-outline" size={16} color="#fff" style={[styles.metaIcon, { marginLeft: 12 }]} />
+          <Icon name="time-outline" size={16} color="#fff" style={{marginLeft:12}}/>
           <Text style={styles.meta}>{new Date(forum.olusturmaTarihi).toLocaleString('tr-TR')}</Text>
         </View>
-        <Text style={styles.count}>Mesaj sayısı: {forum.entrySayisi ?? 0}</Text>
+        <Text style={styles.count}>Mesaj sayısı: {entries.length}</Text>
       </View>
 
-      {entries.length===0 ? (
-        <View style={styles.emptyContainer}>
-          <Icon name="chatbubble-ellipses-outline" size={40} color="#fff" style={{ opacity: 0.7, marginBottom: 8 }} />
-          <Text style={styles.emptyText}>Henüz mesaj yok.</Text>
+      {/* ---------- Liste ---------- */}
+      {entries.length === 0 ? (
+        <View style={styles.empty}>
+          <Icon name="chatbubble-ellipses-outline" size={40} color="#fff" style={{opacity:0.7,marginBottom:8}}/>
+          <Text style={styles.emptyTxt}>Henüz mesaj yok.</Text>
         </View>
       ) : (
         <FlatList
           data={entries}
           keyExtractor={e => (e.entryId ?? e.entryid).toString()}
           renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{paddingHorizontal:16,paddingBottom:30}}
           showsVerticalScrollIndicator={false}
         />
       )}
 
-      <KeyboardAvoidingView
-        style={styles.footer}
-        behavior={Platform.OS==='ios'?'padding':'height'}
-      >
+      {/* ---------- Mesaj yazma ---------- */}
+      <KeyboardAvoidingView style={styles.footer}
+        behavior={Platform.OS==='ios'?'padding':'height'}>
         <TextInput
           style={styles.input}
           placeholder="Yeni mesajınızı yazın…"
@@ -167,15 +174,10 @@ export default function ForumDetailScreen() {
           onChangeText={setNewEntry}
           multiline
         />
-        <TouchableOpacity
-          style={styles.btn}
-          onPress={handleAddEntry}
-          disabled={posting}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.sendBtn} onPress={handleAddEntry} disabled={posting}>
           {posting
-            ? <ActivityIndicator color="#f75c5b" />
-            : <Icon name="send" size={22} color="#f75c5b" />}
+            ? <ActivityIndicator color="#f75c5b"/>
+            : <Icon name="send" size={22} color="#f75c5b"/>}
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -183,31 +185,35 @@ export default function ForumDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex:1 },
-  loader:    { flex:1, justifyContent:'center', alignItems:'center' },
-  loadingText:{ color:'#fff', fontSize:16, marginTop:12, opacity:0.8 },
-  header:    { padding:20, borderBottomWidth:1, borderBottomColor:'rgba(255,255,255,0.2)', paddingTop:48 },
-  headerIconRow:{ flexDirection:'row', alignItems:'center', marginBottom:8 },
-  headerIcon: { marginRight:10 },
-  title:     { color:'#fff', fontSize:22, fontWeight:'700', flex:1, letterSpacing:0.5 },
-  metaRow:   { flexDirection:'row', alignItems:'center', marginBottom:4 },
-  metaIcon:  { marginRight:4 },
-  meta:      { color:'#eee', fontSize:13, marginRight:8, fontWeight:'500' },
-  count:     { color:'#fff', fontSize:14, marginTop:8, fontStyle:'italic' },
-  emptyContainer:{ flex:1, justifyContent:'center', alignItems:'center', marginTop:40 },
-  emptyText: { color:'#fff', opacity:0.8, fontSize:16 },
-  listContent:{ paddingHorizontal:16, paddingBottom:30 },
-  card:      { backgroundColor:'#fff', borderRadius:16, marginVertical:8, shadowColor:'#000', shadowOffset:{width:0,height:4}, shadowOpacity:0.08, shadowRadius:8, elevation:5, borderWidth:1, borderColor:'rgba(0,0,0,0.04)' },
-  cardContent:{ padding:16 },
-  cardHeader:{ flexDirection:'row', alignItems:'center', marginBottom:8 },
-  cardIcon:  { marginRight:8 },
-  cardText:  { fontSize:15, color:'#2D3436', flex:1, fontWeight:'600' },
-  cardFooter:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginTop:8 },
-  cardUserRow:{ flexDirection:'row', alignItems:'center' },
-  cardUser:  { fontSize:12, color:'#555', marginLeft:4, fontWeight:'500' },
-  reactions: { flexDirection:'row', alignItems:'center' },
-  reaction:  { marginLeft:4, fontSize:13, color:'#ff8a5c', fontWeight:'600' },
-  footer:    { flexDirection:'row', padding:16, backgroundColor:'rgba(0,0,0,0.05)', alignItems:'flex-end' },
-  input:     { flex:1, backgroundColor:'#fff', borderRadius:20, paddingHorizontal:16, paddingVertical:10, marginRight:8, maxHeight:100, fontSize:15 },
-  btn:       { backgroundColor:'#fff', borderRadius:20, justifyContent:'center', alignItems:'center', paddingHorizontal:16, height:40 },
+  container:{flex:1},
+  loader:{flex:1,justifyContent:'center',alignItems:'center'},
+  loadingText:{color:'#fff',marginTop:12,fontSize:16,opacity:0.8},
+
+  header:{padding:20,paddingTop:48,borderBottomWidth:1,borderBottomColor:'rgba(255,255,255,0.2)'},
+  headerRow:{flexDirection:'row',alignItems:'center',marginBottom:8},
+  headerIcon:{marginRight:10},
+  title:{color:'#fff',fontSize:22,fontWeight:'700',flexShrink:1},
+  metaRow:{flexDirection:'row',alignItems:'center'},
+  meta:{color:'#eee',fontSize:13,marginLeft:4,marginRight:12},
+  count:{color:'#fff',marginTop:8,fontStyle:'italic'},
+
+  empty:{flex:1,justifyContent:'center',alignItems:'center',marginTop:40},
+  emptyTxt:{color:'#fff',fontSize:16,opacity:0.8},
+
+  card:{backgroundColor:'#fff',borderRadius:16,marginVertical:8,shadowColor:'#000',
+        shadowOffset:{width:0,height:4},shadowOpacity:0.08,shadowRadius:8,elevation:5,
+        borderWidth:1,borderColor:'rgba(0,0,0,0.04)'},
+  cardContent:{padding:16},
+  cardHeader:{flexDirection:'row',alignItems:'center',marginBottom:6},
+  cardIcon:{marginRight:8},
+  cardText:{fontSize:15,color:'#2D3436',flex:1,fontWeight:'600'},
+  cardFooter:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:6},
+  userRow:{flexDirection:'row',alignItems:'center'},
+  user:{marginLeft:4,fontSize:12,color:'#555',fontWeight:'500'},
+  reactions:{flexDirection:'row',alignItems:'center'},
+
+  footer:{flexDirection:'row',padding:16,backgroundColor:'rgba(0,0,0,0.06)',alignItems:'flex-end'},
+  input:{flex:1,backgroundColor:'#fff',borderRadius:20,paddingHorizontal:16,paddingVertical:10,
+         maxHeight:100,fontSize:15,marginRight:8},
+  sendBtn:{backgroundColor:'#fff',borderRadius:20,paddingHorizontal:16,justifyContent:'center',alignItems:'center'},
 });
