@@ -61,6 +61,7 @@ import QuestionDetailScreen from './src/screens/Universty_sayfasi/QuestionDetail
 import AdminPanelScreen from './src/screens/admin/AdminPanelScreen';
 import AdminForumDetay from './src/screens/admin/AdminForumDetay';
 import AdminSoruDetay from './src/screens/admin/AdminSoruDetay';
+import SuperUserAdmin from './src/screens/admin/SuperUserAdmin';
 
 
 
@@ -150,6 +151,7 @@ export default function App() {
 
   <Stack.Screen name="AdminForumDetay" component={AdminForumDetay} />
   <Stack.Screen name="AdminSoruDetay" component={AdminSoruDetay} />
+    <Stack.Screen name="SuperUserAdmin" component={SuperUserAdmin} />
 
 
         

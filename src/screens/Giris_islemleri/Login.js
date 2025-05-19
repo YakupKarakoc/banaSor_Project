@@ -54,7 +54,7 @@ const LoginScreen = () => {
     Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true })
       .start(() => handleLogin());
 
- const handleLogin = async () => {
+const handleLogin = async () => {
   try {
     const r = await axios.post(
       'http://10.0.2.2:3000/api/auth/login',
@@ -71,21 +71,25 @@ const LoginScreen = () => {
 
     const userObj = r.data.user ?? r.data;
 
-    // Kullanıcı admin mi?
-    if (
-      String(userObj.kullanicirolu).toLowerCase() === 'admin'
-    ) {
-      // Admin paneline yönlendir, token gönder
-      navigation.replace('AdminPanel', { token, user: userObj });
-    } else {
-      // Normal kullanıcı ise ana sayfaya yönlendir
-      navigation.replace('Home', { user: userObj });
+    const role = String(userObj.kullanicirolu).toLowerCase();
+
+    if (role === 'superuser') {
+      return navigation.replace('SuperUserAdmin', { user: userObj, token });
     }
+
+    if (role === 'admin') {
+      return navigation.replace('AdminPanelScreen', { user: userObj, token });
+    }
+
+    // Normal kullanıcı
+    return navigation.replace('Home', { user: userObj });
 
   } catch (e) {
     Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
   }
 };
+
+
 
 
 
