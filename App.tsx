@@ -21,6 +21,9 @@ import MyEntriesScreen   from './src/screens/MyEntriesScreen';
 import UpdateQuestionScreen from './src/screens/UpdateQuestionScreen';
 import UpdateAnswer   from './src/screens/UpdateAnswer'
 import UpdateForumScreen from './src/screens/UpdateForumScreen';
+import UpdateEntryScreen from './src/screens/UpdateEntryScreen';
+import GroupListScreen from './src/screens/GroupListScreen';
+
 
 
 // --- University & profile ---
@@ -55,12 +58,11 @@ import NewQuestionScreen   from './src/screens/Universty_sayfasi/NewQuestionScre
 import QuestionDetailScreen from './src/screens/Universty_sayfasi/QuestionDetailScreen';
 
 // --- Admin ---
-import AdminDashboard    from './src/screens/admin/AdminDashboard';
-import UniversiteYonetim from './src/screens/admin/UniversiteYonetim';
-import KullaniciYonetim  from './src/screens/admin/KullaniciYonetim';
-import GeriBildirimler   from './src/screens/admin/GeriBildirimler';
-import SoruYonetim       from './src/screens/admin/SoruYonetim';
-import FakulteYonetim    from './src/screens/admin/FakulteYonetim';
+import AdminPanelScreen from './src/screens/admin/AdminPanelScreen';
+import AdminForumDetay from './src/screens/admin/AdminForumDetay';
+import AdminSoruDetay from './src/screens/admin/AdminSoruDetay';
+
+
 
 // --- Forum flow ---
 import ForumScreen        from './src/screens/Universty_sayfasi/ForumScreen';
@@ -96,11 +98,20 @@ export default function App() {
         <Stack.Screen name="UpdateQuestion" component={UpdateQuestionScreen} />
         <Stack.Screen name="UpdateAnswer" component={UpdateAnswer}/>
         <Stack.Screen name="ForumGuncelle" component={UpdateForumScreen}/>
+        <Stack.Screen
+  name="UpdateEntry"
+  component={UpdateEntryScreen}
+  options={{
+    headerShown: false // Kendi header'ın varsa
+  }}
+/>
 
 
 
         {/* Main */}
         <Stack.Screen name="Home" component={Home} />
+       
+
 
         {/* University / Department */}
         <Stack.Screen name="Universiteler" component={UniversitelerListesi} />
@@ -110,6 +121,7 @@ export default function App() {
         {/* Favorites & Profile */}
         <Stack.Screen name="Favoriler" component={Favoriler} />
         <Stack.Screen name="Profile"   component={ProfileScreen} />
+         <Stack.Screen name="GroupList" component={GroupListScreen} options={{ headerShown: false }} />
 
         {/* Registration completion */}
         <Stack.Screen name="StudentComplete"  component={StudentComplete} />
@@ -130,12 +142,17 @@ export default function App() {
         <Stack.Screen name="NewDepartmentQuestionScreen"  component={NewDepartmentQuestionScreen} />
 
         {/* Admin */}
-        <Stack.Screen name="AdminDashboard"    component={AdminDashboard} />
-        <Stack.Screen name="UniversiteYonetim" component={UniversiteYonetim} />
-        <Stack.Screen name="KullaniciYonetim"  component={KullaniciYonetim} />
-        <Stack.Screen name="GeriBildirimler"   component={GeriBildirimler} />
-        <Stack.Screen name="SoruYonetim"       component={SoruYonetim} />
-        <Stack.Screen name="FakulteYonetim"    component={FakulteYonetim} />
+       <Stack.Screen
+    name="AdminPanel"
+    component={AdminPanelScreen}
+    options={{ title: "Admin Paneli", headerShown: true }}
+  />
+
+  <Stack.Screen name="AdminForumDetay" component={AdminForumDetay} />
+  <Stack.Screen name="AdminSoruDetay" component={AdminSoruDetay} />
+
+
+        
 
         {/* Q&A */}
         <Stack.Screen name="Topics"         component={TopicListScreen} />

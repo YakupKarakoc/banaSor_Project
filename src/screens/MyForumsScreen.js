@@ -26,30 +26,28 @@ export default function MyForumsScreen() {
   const [selectedId, setSelectedId]     = useState(null);
   const [newTitle, setNewTitle]         = useState('');
 
- useEffect(() => {
-  fetchMyForums();
-}, []);
+  // --- Fetch the user's forums ---
+  const fetchMyForums = async () => {
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const res = await axios.get(
+        `${BASE}/api/profil/forumlarim`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setData(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Hata', 'Forumlar yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-const fetchMyForums = async () => {
-  setLoading(true);
-  try {
-    const token = await getToken();
-    const res = await axios.get(
-      `${BASE}/api/profil/forumlarim`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log('FORUMLAR:', res.data);  // ← ekleyin
-    setData(Array.isArray(res.data) ? res.data : []);
-  } catch (e) {
-    // ...
-  } finally {
-    setLoading(false);
-  }
-};
-
+  useEffect(() => { fetchMyForums(); }, []);
 
   // --- Delete a forum ---
-  const handleDelete = forumId => {
+  const handleDelete = (forumid) => {
     Alert.alert(
       'Onayla',
       'Bu forumu silmek istediğinize emin misiniz?',
@@ -65,14 +63,17 @@ const fetchMyForums = async () => {
                 `${BASE}/api/forum/forumSil`,
                 {
                   headers: { Authorization: `Bearer ${token}` },
-                  data: { forumId }
+                  data: { forumId: forumid } // backend body: forumId küçük harf
                 }
               );
               Alert.alert('Başarılı', 'Forum silindi');
               fetchMyForums();
             } catch (e) {
               console.error(e);
-              Alert.alert('Hata', e.response?.data?.message || 'Silme başarısız');
+              Alert.alert(
+                'Hata',
+                e.response?.data?.message || e.response?.data?.error || 'Silme başarısız'
+              );
             }
           }
         }
@@ -80,23 +81,20 @@ const fetchMyForums = async () => {
     );
   };
 
-  // --- Open update modal ---
-  const openUpdateModal = (forumId, currentTitle) => {
-    setSelectedId(forumId);
+  // --- Open the update modal ---
+  const openUpdateModal = (forumid, currentTitle) => {
+    setSelectedId(forumid);
     setNewTitle(currentTitle);
     setModalVisible(true);
   };
 
   // --- Submit title update ---
   const handleUpdate = async () => {
-    if (!newTitle.trim()) {
-      return Alert.alert('Hata', 'Başlık boş olamaz.');
-    }
     try {
       const token = await getToken();
       await axios.patch(
         `${BASE}/api/forum/forumGuncelle`,
-        { forumId: selectedId, yeniBaslik: newTitle.trim() },
+        { forumId: selectedId, yeniBaslik: newTitle },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       Alert.alert('Başarılı', 'Başlık güncellendi');
@@ -104,7 +102,10 @@ const fetchMyForums = async () => {
       fetchMyForums();
     } catch (e) {
       console.error('Güncelle error:', e.response?.status, e.response?.data);
-      Alert.alert('Hata', e.response?.data?.message || 'Güncelleme başarısız');
+      Alert.alert(
+        'Hata',
+        e.response?.data?.message || e.response?.data?.error || 'Güncelleme başarısız'
+      );
     }
   };
 
@@ -115,38 +116,23 @@ const fetchMyForums = async () => {
         style={styles.cardInner}
         activeOpacity={0.85}
         onPress={() =>
-          
-          navigation.navigate('ForumDetail', { forumId: item.forumId })
+          navigation.navigate('ForumDetail', { forumId: item.forumid })
         }
       >
         <View style={styles.row}>
-          <Ionicons
-            name="chatbubbles-outline"
-            size={20}
-            color="#f75c5b"
-            style={{ marginRight: 10 }}
-          />
-          <Text style={styles.title} numberOfLines={2}>
-            {item.baslik}
-          </Text>
+          <Ionicons name="chatbubbles-outline" size={20} color="#f75c5b" style={{ marginRight: 10 }}/>
+          <Text style={styles.title} numberOfLines={2}>{item.baslik}</Text>
         </View>
         <View style={styles.metaRow}>
           <Ionicons name="school-outline" size={14} color="#ff8a5c" />
-          <Text style={styles.meta}>{item.universiteAd}</Text>
-          <Ionicons
-            name="document-text-outline"
-            size={14}
-            color="#ff8a5c"
-            style={{ marginLeft: 10 }}
-          />
-          <Text style={styles.meta}>{item.entrySayisi} entry</Text>
+          <Text style={styles.meta}>Uni ID: {item.universiteid}</Text>
+          <Ionicons name="document-text-outline" size={14} color="#ff8a5c" style={{ marginLeft: 10 }}/>
         </View>
       </TouchableOpacity>
-
       <View style={styles.actionRow}>
         <TouchableOpacity
           style={styles.updateBtn}
-          onPress={() => openUpdateModal(item.forumId, item.baslik)}
+          onPress={() => openUpdateModal(item.forumid, item.baslik)}
         >
           <Ionicons name="pencil-outline" size={18} color="#fff" />
           <Text style={styles.actionText}>Güncelle</Text>
@@ -154,7 +140,7 @@ const fetchMyForums = async () => {
 
         <TouchableOpacity
           style={styles.deleteBtn}
-          onPress={() => handleDelete(item.forumId)}
+          onPress={() => handleDelete(item.forumid)}
         >
           <Ionicons name="trash-outline" size={18} color="#fff" />
           <Text style={styles.actionText}>Sil</Text>
@@ -196,9 +182,7 @@ const fetchMyForums = async () => {
         ) : (
           <FlatList
             data={data}
-            keyExtractor={(item, idx) =>
-              item.forumId ? `f-${item.forumId}` : `idx-${idx}`
-            }
+            keyExtractor={item => item.forumid?.toString()}
             renderItem={renderItem}
             contentContainerStyle={{ padding: 16, paddingBottom: 30 }}
             showsVerticalScrollIndicator={false}
@@ -317,6 +301,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  /* Modal */
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

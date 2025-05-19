@@ -47,21 +47,21 @@ const HomeScreen = () => {
       icon : 'chatbubbles-outline',
       onPress: () => navigation.navigate('Konular'),
     },
-    {
-      label: 'Topluluklar',
-      icon : 'people-outline',
-      onPress: () => navigation.navigate('Forums'),
-    },
+   {
+  label: 'Topluluklar',
+  icon : 'people-outline',
+  onPress: () => navigation.navigate('GroupList'), // 'GroupList' route adı
+},
     {
       label: 'Favoriler',
       icon : 'star-outline',
       onPress: () => navigation.navigate('Favoriler'),
     },
-    {
-      label: 'Mesajlar',
-      icon : 'mail-outline',
-      onPress: () => navigation.navigate('Messages'),
-    },
+    // {
+    //   label: 'Mesajlar',
+    //   icon : 'mail-outline',
+    //   onPress: () => navigation.navigate('Messages'),
+    // },
     {
       label: 'Profilim',
       icon : 'person-circle-outline',

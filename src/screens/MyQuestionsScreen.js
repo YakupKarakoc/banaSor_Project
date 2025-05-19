@@ -15,6 +15,7 @@ import { useNavigation, useIsFocused } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ion from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import { getToken } from '../utils/auth'; // <--- EKLENDİ
 
 const BASE = 'http://10.0.2.2:3000';
 
@@ -33,7 +34,10 @@ export default function MyQuestionsScreen() {
   const getData = async () => {
     setLoad(true);
     try {
-      const { data } = await axios.get(`${BASE}/api/profil/sorularim`);
+      const token = await getToken();
+      const { data } = await axios.get(`${BASE}/api/profil/sorularim`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setList(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
@@ -52,7 +56,7 @@ export default function MyQuestionsScreen() {
     if (isFocused) getData();
   }, [isFocused]);
 
-  // sil işlemi
+  // sil işlemi (DOĞRU endpoint ve token ile)
   const handleDelete = (soruId) => {
     Alert.alert(
       'Onay',
@@ -64,7 +68,10 @@ export default function MyQuestionsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete(`${BASE}/api/soru/soruisil/${soruId}`);
+              const token = await getToken();
+              await axios.delete(`${BASE}/api/soru/soruSil/${soruId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
               getData();  // silince listeyi yenile
             } catch (e) {
               console.error(e);

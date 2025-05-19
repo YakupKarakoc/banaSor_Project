@@ -54,38 +54,40 @@ const LoginScreen = () => {
     Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true })
       .start(() => handleLogin());
 
-  // --- LOGIN ---
-  const handleLogin = async () => {
-    // Admin shortcut
-    if (email === 'admin' && password === 'admin') {
-      return navigation.replace('AdminDashboard');
+ const handleLogin = async () => {
+  try {
+    const r = await axios.post(
+      'http://10.0.2.2:3000/api/auth/login',
+      { email, sifre: password }
+    );
+
+    if (r.data.error) {
+      return Alert.alert('Hata', r.data.error);
     }
 
-    try {
-      const r = await axios.post(
-        'http://10.0.2.2:3000/api/auth/login',
-        { email, sifre: password }
-      );
+    const token = r.data.token;
+    await saveToken(token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      if (r.data.error) {
-        return Alert.alert('Hata', r.data.error);
-      }
+    const userObj = r.data.user ?? r.data;
 
-      // 1) Token'ı kaydet
-      const token   = r.data.token;
-      await saveToken(token);
-
-      // 2) Axios default header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      // 3) Home'a geç, user objesini params ile gönder
-      const userObj = r.data.user ?? r.data;
+    // Kullanıcı admin mi?
+    if (
+      String(userObj.kullanicirolu).toLowerCase() === 'admin'
+    ) {
+      // Admin paneline yönlendir, token gönder
+      navigation.replace('AdminPanel', { token, user: userObj });
+    } else {
+      // Normal kullanıcı ise ana sayfaya yönlendir
       navigation.replace('Home', { user: userObj });
-
-    } catch (e) {
-      Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
     }
-  };
+
+  } catch (e) {
+    Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
+  }
+};
+
+
 
   // --- ŞİFRE SIFIRLAMA ADIM 1 ---
   const sendResetCode = async () => {
