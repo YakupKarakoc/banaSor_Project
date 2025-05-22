@@ -70,24 +70,22 @@ const handleLogin = async () => {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
     const userObj = r.data.user ?? r.data;
-
     const role = String(userObj.kullanicirolu).toLowerCase();
 
+    // ✅ GİRİŞ YÖNLENDİRMELERİ
     if (role === 'superuser') {
       return navigation.replace('SuperUserAdmin', { user: userObj, token });
+    } else if (role === 'admin') {
+      return navigation.replace('AdminPanel', { user: userObj, token });
+    } else {
+      return navigation.replace('Home', { user: userObj });
     }
-
-    if (role === 'admin') {
-      return navigation.replace('AdminPanelScreen', { user: userObj, token });
-    }
-
-    // Normal kullanıcı
-    return navigation.replace('Home', { user: userObj });
 
   } catch (e) {
     Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
   }
 };
+
 
 
 

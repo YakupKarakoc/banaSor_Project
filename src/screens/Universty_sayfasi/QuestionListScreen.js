@@ -32,36 +32,53 @@ export default function QuestionListScreen() {
   const [slideAnim] = useState(new Animated.Value(50));
 
   useEffect(() => {
-    async function loadQuestions() {
-      setLoading(true);
-      try {
-        let endpoint = '/api/soru/getir';
-        const params = {};
-
-        if (fakulteId) {
-          endpoint = '/api/soru/getir/fakulte';
-          params.fakulteId = fakulteId;
-        } else if (bolumId) {
-          endpoint = '/api/soru/getir/bolum';
-          params.bolumId = bolumId;
-        } else if (universiteId) {
-          endpoint = '/api/soru/getir/universite';
-          params.universiteId = universiteId;
-        }
-
-        const res = await axios.get(`${BASE}${endpoint}`, { params });
-        setQuestions(res.data);
-      } catch (err) {
-        console.error(err);
-        Alert.alert('Hata', 'Sorular yüklenemedi');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadQuestions();
     startAnimations();
   }, [universiteId, fakulteId, bolumId, isFocused]);
+
+  const loadQuestions = async () => {
+    setLoading(true);
+    try {
+      let endpoint = '/api/soru/getir';
+      const params = {};
+
+      if (fakulteId) {
+        endpoint = '/api/soru/getir/fakulte';
+        params.fakulteId = fakulteId;
+      } else if (bolumId) {
+        endpoint = '/api/soru/getir/bolum';
+        params.bolumId = bolumId;
+      } else if (universiteId) {
+        endpoint = '/api/soru/getir/universite';
+        params.universiteId = universiteId;
+      }
+
+      const res = await axios.get(`${BASE}${endpoint}`, { params });
+      const questionList = res.data;
+
+      // Beğeni bilgilerini de kontrol et (her soru için)
+      const enriched = await Promise.all(
+        questionList.map(async q => {
+          try {
+            const begRes = await axios.get(`${BASE}/api/soru/begeni/${q.soruid}`);
+            return {
+              ...q,
+              kullaniciBegendiMi: begRes.data?.begendiMi ?? false,
+            };
+          } catch (err) {
+            return { ...q, kullaniciBegendiMi: false };
+          }
+        })
+      );
+
+      setQuestions(enriched);
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Hata', 'Sorular yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const startAnimations = () => {
     Animated.parallel([
@@ -78,7 +95,7 @@ export default function QuestionListScreen() {
     ]).start();
   };
 
-  const renderItem = ({ item, index }) => (
+  const renderItem = ({ item }) => (
     <Animated.View
       style={[
         styles.card,
@@ -86,10 +103,7 @@ export default function QuestionListScreen() {
           opacity: fadeAnim,
           transform: [
             { translateY: slideAnim },
-            { scale: fadeAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.97, 1]
-            })}
+            { scale: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }
           ]
         }
       ]}
@@ -109,11 +123,11 @@ export default function QuestionListScreen() {
           <Icon name="chatbubble-ellipses-outline" size={16} color="#ff8a5c" style={{ marginLeft: 12 }} />
           <Text style={styles.cardMeta}>{item.cevapsayisi} cevap</Text>
           <LikeButton
-    soruId={item.soruid}
-    likedInit={item.kullaniciBegendiMi}   // backend’in döndürdüğü alan adı
-    countInit={item.begenisayisi}         // toplam beğeni sayısı
-    dark                                   // siyah/metin rengi uyumlu olsun
-  />
+            soruId={item.soruid}
+            likedInit={item.kullaniciBegendiMi}
+            countInit={item.begenisayisi}
+            dark
+          />
         </View>
       </TouchableOpacity>
     </Animated.View>

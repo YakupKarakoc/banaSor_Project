@@ -1,81 +1,76 @@
 // src/components/ReactionButton.js
-import React, { useState } from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
+
+import React, { useState, useEffect } from 'react';
+import { TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
 const BASE = 'http://10.0.2.2:3000';
 
-/**
- *  props
- *  -----
- *  type      : "Like" | "Dislike"
- *  entryId   : (isteğe bağlı) Forum entry ID
- *  cevapId   : (isteğe bağlı) Cevap ID
- *  countInit : İlk sayı
- */
 export default function ReactionButton({
-  type = 'Like',
-  entryId = null,
-  cevapId = null,
-  countInit = 0,
+  type,      // "Like" veya "Dislike"
+  cevapId,   // Tepki verilecek cevabın ID'si
+  countInit, // Başlangıç toplam sayısı
 }) {
-  const [count,    setCount]    = useState(Number(countInit));
-  const [selected, setSelected] = useState(false);
-  const [busy,     setBusy]     = useState(false);
+  const [count, setCount]   = useState(countInit);
+  const [active, setActive] = useState(false);
 
-  /* ---------------- helpers ---------------- */
-  const iconName  =
-    type === 'Like'
-      ? selected ? 'thumbs-up'   : 'thumbs-up-outline'
-      : selected ? 'thumbs-down' : 'thumbs-down-outline';
+  // Başlangıçta sunucudan kullanıcının daha önce tepki verip vermediğini çek
+  useEffect(() => {
+    axios
+      .get(`${BASE}/api/soru/cevap/tepki/${cevapId}`)
+      .then(res => {
+        // res.data.tepki ya "Like", "Dislike" veya null
+        setActive(res.data.tepki === type);
+      })
+      .catch(err => {
+        console.error('Tepki alınamadı', err);
+      });
+  }, [cevapId, type]);
 
-  const iconColor = selected ? '#f75c5b' : '#ff8a5c';
-
-  const isEntry   = !!entryId;                   // entry mi, cevap mı?
-  const url       = isEntry
-      ? '/api/forum/entry/tepki'
-      : '/api/soru/cevap/tepki';
-
-  const payload   = isEntry
-      ? { entryId, tepki: type }
-      : { cevapId, tepki: type };
-
-  /* ---------------- action ----------------- */
-  const toggle = async () => {
-    if (busy) return;
-
-    // optimistic update
-    const delta = selected ? -1 : 1;
-    setSelected(!selected);
-    setCount(c => c + delta);
-    setBusy(true);
-
+  const onPress = async () => {
     try {
-      await axios.post(`${BASE}${url}`, payload);
-      // (dilerseniz sunucudan güncel sayı dönüyorsa burada setCount(data.count) yapabilirsiniz)
+      const newTepki = active ? null : type;
+      // Sunucuya POST ile tepkiyi güncelle
+      await axios.post(
+        `${BASE}/api/soru/cevap/tepki/${cevapId}`,
+        { tepki: newTepki }
+      );
+      // UI'ı güncelle
+      setActive(!active);
+      setCount(c => c + (active ? -1 : 1));
     } catch (err) {
-      // rollback
-      setSelected(s => !s);
-      setCount(c => c - delta);
-      console.error(err);
-    } finally {
-      setBusy(false);
+      console.error('Tepki kaydedilemedi', err);
+      Alert.alert('Hata', 'Tepki kaydedilemedi');
     }
   };
 
-  /* ---------------- render ----------------- */
+  // İkon seçimi
+  const iconName = type === 'Like'
+    ? active ? 'thumbs-up' : 'thumbs-up-outline'
+    : active ? 'thumbs-down' : 'thumbs-down-outline';
+
   return (
-    <TouchableOpacity style={styles.row} onPress={toggle} disabled={busy}>
-      {busy
-        ? <ActivityIndicator size="small" color="#f75c5b" />
-        : <Icon name={iconName} size={18} color={iconColor} />}
-      <Text style={styles.txt}>{count}</Text>
+    <TouchableOpacity style={styles.container} onPress={onPress}>
+      <Icon name={iconName} size={20} color={active ? '#f75c5b' : '#aaa'} />
+      <Text style={[styles.count, active && styles.countActive]}>{count}</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', marginLeft: 8 },
-  txt: { marginLeft: 4, fontSize: 13, color: '#ff8a5c', fontWeight: '600' },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  count: {
+    marginLeft: 4,
+    fontSize: 13,
+    color: '#666',
+  },
+  countActive: {
+    color: '#f75c5b',
+    fontWeight: '700',
+  },
 });

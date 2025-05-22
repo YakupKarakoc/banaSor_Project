@@ -14,7 +14,7 @@ import {
 import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import LikeButton from '../../components/LikeButton';            // 👈 KALP
+import LikeButton from '../../components/LikeButton';
 import axios from 'axios';
 
 const BASE = 'http://10.0.2.2:3000';
@@ -38,12 +38,31 @@ export default function DepartmentQuestionScreen() {
   const loadQuestions = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(`${BASE}/api/soru/getir/bolum`, { params:{ bolumId: Number(bolumId) } });
-      setQuestions(data);
+      const { data } = await axios.get(`${BASE}/api/soru/getir/bolum`, {
+        params: { bolumId: Number(bolumId) }
+      });
+
+      const enriched = await Promise.all(
+        data.map(async (q) => {
+          try {
+            const res = await axios.get(`${BASE}/api/soru/begeni/${q.soruid}`);
+            return {
+              ...q,
+              kullaniciBegendiMi: res.data?.begendiMi ?? false,
+            };
+          } catch {
+            return { ...q, kullaniciBegendiMi: false };
+          }
+        })
+      );
+
+      setQuestions(enriched);
     } catch (err) {
       console.error(err);
       Alert.alert('Hata', 'Sorular yüklenemedi');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startAnim = () => {
@@ -54,12 +73,22 @@ export default function DepartmentQuestionScreen() {
   };
 
   const renderItem = ({ item }) => (
-    <Animated.View style={[styles.card,{ opacity:fadeAnim, transform:[{translateY:slideAnim},{scale:fadeAnim.interpolate({inputRange:[0,1],outputRange:[0.97,1]})}] }]}
-    >
+    <Animated.View style={[styles.card,{
+      opacity: fadeAnim,
+      transform: [
+        { translateY: slideAnim },
+        { scale: fadeAnim.interpolate({ inputRange:[0,1], outputRange:[0.97,1] }) }
+      ]
+    }]}>
       <TouchableOpacity
         style={styles.cardBtn}
         activeOpacity={0.9}
-        onPress={()=>navigation.navigate('DepartmentQuestionDetailScreen',{ soru:item, universite, faculty, department })}
+        onPress={() => navigation.navigate('DepartmentQuestionDetailScreen', {
+          soru: item,
+          universite,
+          faculty,
+          department
+        })}
       >
         <View style={styles.cardHeader}>
           <Icon name="help-circle-outline" size={20} color="#f75c5b" style={styles.cardIcon} />
@@ -70,14 +99,13 @@ export default function DepartmentQuestionScreen() {
           <Icon name="person-outline" size={14} color="#ff8a5c" />
           <Text style={styles.metaText}>{item.kullaniciadi}</Text>
           <Icon name="chatbubble-ellipses-outline" size={14} color="#ff8a5c" style={{ marginLeft:10 }} />
-          <Text style={styles.metaText}>{item.cevapsayisi} cevap</Text>
+          <Text style={styles.metaText}>{item.cevapsayisi} cevap</Text>
 
-          {/* ❤️ LIKE */}
           <LikeButton
             soruId={item.soruid}
-            likedInit={item.kullaniciBegendiMi}   // backend boolean alan adı
-            countInit={item.begenisayisi}         // backend like sayısı
-            dark                                   // siyah metinlere uygun beyaz kalp
+            likedInit={item.kullaniciBegendiMi}
+            countInit={item.begenisayisi}
+            dark
           />
         </View>
       </TouchableOpacity>
@@ -91,7 +119,10 @@ export default function DepartmentQuestionScreen() {
           <Icon name="help-circle-outline" size={26} color="#fff" style={{ marginRight:6 }} />
           <Text style={styles.headerTitle}>{department.bolumadi} – Sorular</Text>
         </View>
-        <TouchableOpacity style={styles.newBtn} onPress={()=>navigation.navigate('NewDepartmentQuestionScreen',{ bolumId })}>
+        <TouchableOpacity
+          style={styles.newBtn}
+          onPress={() => navigation.navigate('NewDepartmentQuestionScreen', { bolumId })}
+        >
           <Icon name="add-circle-outline" size={18} color="#f75c5b" style={{ marginRight:4 }} />
           <Text style={styles.newBtnText}>Yeni Soru</Text>
         </TouchableOpacity>
@@ -99,7 +130,7 @@ export default function DepartmentQuestionScreen() {
 
       {loading ? (
         <View style={styles.loader}><ActivityIndicator color="#fff" size="large"/></View>
-      ) : questions.length===0 ? (
+      ) : questions.length === 0 ? (
         <View style={styles.emptyWrap}>
           <Icon name="help-circle-outline" size={48} color="#fff" style={{ opacity:0.7, marginBottom:8 }} />
           <Text style={styles.emptyText}>Henüz soru yok.</Text>
@@ -107,7 +138,7 @@ export default function DepartmentQuestionScreen() {
       ) : (
         <FlatList
           data={questions}
-          keyExtractor={q=>q.soruid.toString()}
+          keyExtractor={q => q.soruid.toString()}
           renderItem={renderItem}
           contentContainerStyle={{ paddingHorizontal:16, paddingBottom:30 }}
           showsVerticalScrollIndicator={false}

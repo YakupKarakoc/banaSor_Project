@@ -1,15 +1,25 @@
+// src/screens/ForumDetailScreen.js
+
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity,
-  TextInput, ActivityIndicator, Alert,
-  StyleSheet, KeyboardAvoidingView, Platform,
-  Animated, Dimensions,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
 import { useRoute, useIsFocused, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import ReactionButton from '../../components/ReactionButton';
+import EntryReaction from '../../components/EntryReaction';  // <-- updated import
 
 const { width } = Dimensions.get('window');
 const BASE = 'http://10.0.2.2:3000';
@@ -18,9 +28,7 @@ export default function ForumDetailScreen() {
   const route      = useRoute();
   const navigation = useNavigation();
   const isFocused  = useIsFocused();
-
-  // forumId güvenli alınır
-  const forumId = route?.params?.forumId;
+  const forumId    = route?.params?.forumId;
 
   const [forum,    setForum]    = useState(null);
   const [entries,  setEntries]  = useState([]);
@@ -30,7 +38,6 @@ export default function ForumDetailScreen() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim]= useState(new Animated.Value(40));
 
-  // forumId yoksa kullanıcıyı ana ekrana yönlendir!
   useEffect(() => {
     if (!forumId) {
       Alert.alert(
@@ -41,35 +48,42 @@ export default function ForumDetailScreen() {
       return;
     }
     fetchDetail();
-    startAnim();
-  }, [forumId, isFocused]);
-
-  const fetchDetail = () => {
-    if (!forumId) return;
-    setLoading(true);
-    axios.get(`${BASE}/api/forum/detay/${forumId}`)
-      .then(res => {
-        setForum(res.data);
-        setEntries(res.data.entryler || []);
-      })
-      .catch(() => Alert.alert('Hata', 'Forum detayları yüklenemedi'))
-      .finally(() => setLoading(false));
-  };
-
-  const startAnim = () => {
     Animated.parallel([
       Animated.timing(fadeAnim,  { toValue:1, duration:700, useNativeDriver:true }),
       Animated.timing(slideAnim, { toValue:0, duration:700, useNativeDriver:true }),
     ]).start();
+  }, [forumId, isFocused]);
+
+  const fetchDetail = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE}/api/forum/detay/${forumId}`);
+      setForum(res.data);
+      setEntries(res.data.entryler || []);
+    } catch {
+      Alert.alert('Hata', 'Forum detayları yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddEntry = () => {
-    if (!newEntry.trim()) return Alert.alert('Hata', 'Lütfen içerik girin.');
+  const handleAddEntry = async () => {
+    if (!newEntry.trim()) {
+      return Alert.alert('Hata', 'Lütfen içerik girin.');
+    }
     setPosting(true);
-    axios.post(`${BASE}/api/forum/entryEkle`, { forumId, icerik: newEntry.trim() })
-      .then(() => { setNewEntry(''); fetchDetail(); })
-      .catch(() => Alert.alert('Hata', 'Mesaj eklenemedi'))
-      .finally(() => setPosting(false));
+    try {
+      await axios.post(`${BASE}/api/forum/entryEkle`, {
+        forumId,
+        icerik: newEntry.trim(),
+      });
+      setNewEntry('');
+      fetchDetail();
+    } catch {
+      Alert.alert('Hata', 'Mesaj eklenemedi');
+    } finally {
+      setPosting(false);
+    }
   };
 
   if (!forumId) {
@@ -86,7 +100,7 @@ export default function ForumDetailScreen() {
     return (
       <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
         <View style={styles.loader}>
-          <ActivityIndicator size="large" color="#fff"/>
+          <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.loadingText}>Yükleniyor…</Text>
         </View>
       </LinearGradient>
@@ -107,9 +121,10 @@ export default function ForumDetailScreen() {
           opacity: fadeAnim,
           transform: [
             { translateY: slideAnim },
-            { scale: fadeAnim.interpolate({inputRange:[0,1],outputRange:[0.97,1]}) }
+            { scale: fadeAnim.interpolate({ inputRange:[0,1], outputRange:[0.97,1] }) }
           ]
-        }]}>
+        }
+      ]}>
         <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
             <Icon name="chatbubble-ellipses-outline" size={20} color="#f75c5b" style={styles.cardIcon}/>
@@ -121,8 +136,8 @@ export default function ForumDetailScreen() {
               <Text style={styles.user}>{item.kullaniciAdi ?? item.kullaniciadi}</Text>
             </View>
             <View style={styles.reactions}>
-              <ReactionButton type="Like" entryId={id} countInit={like}/>
-              <ReactionButton type="Dislike" entryId={id} countInit={dis}/>
+              <EntryReaction type="Like"    entryId={id} countInit={like} />
+              <EntryReaction type="Dislike" entryId={id} countInit={dis}  />
             </View>
           </View>
         </View>
@@ -132,7 +147,7 @@ export default function ForumDetailScreen() {
 
   return (
     <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
-      {/* ---------- Başlık ---------- */}
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Icon name="chatbubbles-outline" size={28} color="#fff" style={styles.headerIcon}/>
@@ -142,12 +157,14 @@ export default function ForumDetailScreen() {
           <Icon name="person-outline" size={16} color="#fff"/>
           <Text style={styles.meta}>{owner}</Text>
           <Icon name="time-outline" size={16} color="#fff" style={{marginLeft:12}}/>
-          <Text style={styles.meta}>{new Date(forum.olusturmaTarihi).toLocaleString('tr-TR')}</Text>
+          <Text style={styles.meta}>
+            {new Date(forum.olusturmaTarihi).toLocaleString('tr-TR')}
+          </Text>
         </View>
         <Text style={styles.count}>Mesaj sayısı: {entries.length}</Text>
       </View>
 
-      {/* ---------- Liste ---------- */}
+      {/* Entry list */}
       {entries.length === 0 ? (
         <View style={styles.empty}>
           <Icon name="chatbubble-ellipses-outline" size={40} color="#fff" style={{opacity:0.7,marginBottom:8}}/>
@@ -158,14 +175,16 @@ export default function ForumDetailScreen() {
           data={entries}
           keyExtractor={e => (e.entryId ?? e.entryid).toString()}
           renderItem={renderItem}
-          contentContainerStyle={{paddingHorizontal:16,paddingBottom:30}}
+          contentContainerStyle={{ paddingHorizontal:16, paddingBottom:30 }}
           showsVerticalScrollIndicator={false}
         />
       )}
 
-      {/* ---------- Mesaj yazma ---------- */}
-      <KeyboardAvoidingView style={styles.footer}
-        behavior={Platform.OS==='ios'?'padding':'height'}>
+      {/* New entry input */}
+      <KeyboardAvoidingView
+        style={styles.footer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <TextInput
           style={styles.input}
           placeholder="Yeni mesajınızı yazın…"
@@ -174,7 +193,11 @@ export default function ForumDetailScreen() {
           onChangeText={setNewEntry}
           multiline
         />
-        <TouchableOpacity style={styles.sendBtn} onPress={handleAddEntry} disabled={posting}>
+        <TouchableOpacity
+          style={styles.sendBtn}
+          onPress={handleAddEntry}
+          disabled={posting}
+        >
           {posting
             ? <ActivityIndicator color="#f75c5b"/>
             : <Icon name="send" size={22} color="#f75c5b"/>}
@@ -185,35 +208,36 @@ export default function ForumDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:{flex:1},
-  loader:{flex:1,justifyContent:'center',alignItems:'center'},
-  loadingText:{color:'#fff',marginTop:12,fontSize:16,opacity:0.8},
+  container:{ flex:1 },
+  loader:{ flex:1,justifyContent:'center',alignItems:'center' },
+  loadingText:{ color:'#fff', marginTop:12, fontSize:16, opacity:0.8 },
 
-  header:{padding:20,paddingTop:48,borderBottomWidth:1,borderBottomColor:'rgba(255,255,255,0.2)'},
-  headerRow:{flexDirection:'row',alignItems:'center',marginBottom:8},
-  headerIcon:{marginRight:10},
-  title:{color:'#fff',fontSize:22,fontWeight:'700',flexShrink:1},
-  metaRow:{flexDirection:'row',alignItems:'center'},
-  meta:{color:'#eee',fontSize:13,marginLeft:4,marginRight:12},
-  count:{color:'#fff',marginTop:8,fontStyle:'italic'},
+  header:{ padding:20, paddingTop:48, borderBottomWidth:1, borderBottomColor:'rgba(255,255,255,0.2)' },
+  headerRow:{ flexDirection:'row', alignItems:'center', marginBottom:8 },
+  headerIcon:{ marginRight:10 },
+  title:{ color:'#fff', fontSize:22, fontWeight:'700', flexShrink:1 },
+  metaRow:{ flexDirection:'row', alignItems:'center' },
+  meta:{ color:'#eee', fontSize:13, marginLeft:4, marginRight:12 },
+  count:{ color:'#fff', marginTop:8, fontStyle:'italic' },
 
-  empty:{flex:1,justifyContent:'center',alignItems:'center',marginTop:40},
-  emptyTxt:{color:'#fff',fontSize:16,opacity:0.8},
+  empty:{ flex:1, justifyContent:'center', alignItems:'center', marginTop:40 },
+  emptyTxt:{ color:'#fff', fontSize:16, opacity:0.8 },
 
-  card:{backgroundColor:'#fff',borderRadius:16,marginVertical:8,shadowColor:'#000',
-        shadowOffset:{width:0,height:4},shadowOpacity:0.08,shadowRadius:8,elevation:5,
-        borderWidth:1,borderColor:'rgba(0,0,0,0.04)'},
-  cardContent:{padding:16},
-  cardHeader:{flexDirection:'row',alignItems:'center',marginBottom:6},
-  cardIcon:{marginRight:8},
-  cardText:{fontSize:15,color:'#2D3436',flex:1,fontWeight:'600'},
-  cardFooter:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:6},
-  userRow:{flexDirection:'row',alignItems:'center'},
-  user:{marginLeft:4,fontSize:12,color:'#555',fontWeight:'500'},
-  reactions:{flexDirection:'row',alignItems:'center'},
+  card:{ backgroundColor:'#fff', borderRadius:16, marginVertical:8,
+         shadowColor:'#000', shadowOffset:{width:0,height:4},
+         shadowOpacity:0.08, shadowRadius:8, elevation:5,
+         borderWidth:1, borderColor:'rgba(0,0,0,0.04)' },
+  cardContent:{ padding:16 },
+  cardHeader:{ flexDirection:'row', alignItems:'center', marginBottom:6 },
+  cardIcon:{ marginRight:8 },
+  cardText:{ fontSize:15, color:'#2D3436', flex:1, fontWeight:'600' },
+  cardFooter:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginTop:6 },
+  userRow:{ flexDirection:'row', alignItems:'center' },
+  user:{ marginLeft:4, fontSize:12, color:'#555', fontWeight:'500' },
+  reactions:{ flexDirection:'row', alignItems:'center' },
 
-  footer:{flexDirection:'row',padding:16,backgroundColor:'rgba(0,0,0,0.06)',alignItems:'flex-end'},
-  input:{flex:1,backgroundColor:'#fff',borderRadius:20,paddingHorizontal:16,paddingVertical:10,
-         maxHeight:100,fontSize:15,marginRight:8},
-  sendBtn:{backgroundColor:'#fff',borderRadius:20,paddingHorizontal:16,justifyContent:'center',alignItems:'center'},
+  footer:{ flexDirection:'row', padding:16, backgroundColor:'rgba(0,0,0,0.06)', alignItems:'flex-end' },
+  input:{ flex:1, backgroundColor:'#fff', borderRadius:20, paddingHorizontal:16, paddingVertical:10,
+          maxHeight:100, fontSize:15, marginRight:8 },
+  sendBtn:{ backgroundColor:'#fff', borderRadius:20, paddingHorizontal:16, justifyContent:'center', alignItems:'center' },
 });

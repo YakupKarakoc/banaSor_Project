@@ -1,57 +1,103 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, ActivityIndicator, Text, StyleSheet } from 'react-native';
+// src/components/EntryReaction.js
+
+import React, { useState, useEffect } from 'react';
+import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
-const BASE = 'http://10.0.2.2:3000';     // ihtiyaçta güncelle
+const BASE = 'http://10.0.2.2:3000';
 
 /**
- *  type:  "Like" | "Dislike"
- *  countInit:   ilk sayı
- *  entryId:     hedef Entry
+ * props:
+ *  - type:       "Like" | "Dislike"
+ *  - entryId:    integer
+ *  - countInit:  number (initial toplam sayı)
  */
-export default function ReactionButton({ type, countInit = 0, entryId }) {
+export default function EntryReaction({ type, entryId, countInit = 0 }) {
   const [count, setCount]   = useState(countInit);
-  const [pressed, setPr]    = useState(false);   // sadece kullanıcının kendi tepkisi
-  const [busy, setBusy]     = useState(false);
+  const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy]       = useState(false);
 
-  const iconName = type === 'Like'
-        ? (pressed ? 'thumbs-up'   : 'thumbs-up-outline')
-        : (pressed ? 'thumbs-down' : 'thumbs-down-outline');
+  // On mount: fetch whether the user has already reacted
+  useEffect(() => {
+    let cancelled = false;
+    const fetchTepki = async () => {
+      try {
+        const res = await axios.get(`${BASE}/api/forum/entry/tepki/${entryId}`);
+        if (cancelled) return;
+        const tepki = res.data?.tepki; // "Like" | "Dislike" | null
+        setActive(tepki === type);
+      } catch (err) {
+        console.error('Entry tepki yüklenemedi', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchTepki();
+    return () => { cancelled = true; };
+  }, [entryId, type]);
 
-  const toggle = async () => {
-    if (busy) return;
+  const onPress = async () => {
+    if (busy || loading) return;
     setBusy(true);
 
-    // optimistic
-    setPr(!pressed);
-    setCount(c => c + (pressed ? -1 : 1));
+    const wasActive = active;
+    const newTepki = wasActive ? null : type;
+
+    // optimistic UI update
+    setActive(!wasActive);
+    setCount(c => c + (wasActive ? -1 : 1));
 
     try {
-      await axios.post(`${BASE}/api/forum/entry/tepki`, {
-        entryId,
-        tepki: type,
-      });
-    } catch (e) {
-      // geri al
-      setPr(pressed);
-      setCount(c => c + (pressed ? 1 : -1));
+      // **POST** to the shared tepki endpoint (not PUT)
+      await axios.post(
+        `${BASE}/api/forum/entry/tepki`,
+        { entryId, tepki: newTepki }
+      );
+    } catch (err) {
+      console.error('Entry tepki güncellenemedi', err);
+      Alert.alert('Hata', 'Tepki kaydedilemedi');
+      // rollback
+      setActive(wasActive);
+      setCount(c => c + (wasActive ? 1 : -1));
     } finally {
       setBusy(false);
     }
   };
 
+  if (loading) {
+    return <ActivityIndicator size="small" color="#ff8a5c" style={{ marginLeft: 8 }} />;
+  }
+
+  const iconName = type === 'Like'
+    ? active ? 'thumbs-up' : 'thumbs-up-outline'
+    : active ? 'thumbs-down' : 'thumbs-down-outline';
+
   return (
-    <TouchableOpacity style={styles.row} onPress={toggle} disabled={busy}>
+    <TouchableOpacity style={styles.container} onPress={onPress} disabled={busy}>
       {busy
-        ? <ActivityIndicator size={14} color="#ff8a5c" />
-        : <Icon name={iconName} size={18} color="#ff8a5c" />}
-      <Text style={styles.txt}>{count}</Text>
+        ? <ActivityIndicator size="small" color="#ff8a5c" />
+        : <Icon name={iconName} size={18} color="#ff8a5c" />
+      }
+      <Text style={[styles.count, active && styles.countActive]}>{count}</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection:'row', alignItems:'center', marginLeft:8 },
-  txt: { marginLeft:2, fontSize:13, color:'#ff8a5c', fontWeight:'600' },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  count: {
+    marginLeft: 4,
+    fontSize: 13,
+    color: '#666',
+  },
+  countActive: {
+    color: '#f75c5b',
+    fontWeight: '700',
+  },
 });

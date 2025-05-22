@@ -41,7 +41,25 @@ export default function FacultyQuestionScreen() {
       const res = await axios.get(`${BASE}/api/soru/getir/fakulte`, {
         params: { fakulteId: parseInt(fakulteId) },
       });
-      setQuestions(res.data);
+
+      const soruList = res.data;
+
+      // Her soru için beğenip beğenmediğini sorgula
+      const enriched = await Promise.all(
+        soruList.map(async (q) => {
+          try {
+            const begRes = await axios.get(`${BASE}/api/soru/begeni/${q.soruid}`);
+            return {
+              ...q,
+              kullaniciBegendiMi: begRes.data?.begendiMi ?? false,
+            };
+          } catch {
+            return { ...q, kullaniciBegendiMi: false };
+          }
+        })
+      );
+
+      setQuestions(enriched);
     } catch (err) {
       console.error(err);
       Alert.alert('Hata', 'Sorular yüklenemedi');
@@ -59,12 +77,26 @@ export default function FacultyQuestionScreen() {
 
   const renderItem = ({ item }) => (
     <Animated.View
-      style={[styles.card,{ opacity:fadeAnim, transform:[{translateY:slideAnim},{scale:fadeAnim.interpolate({inputRange:[0,1],outputRange:[0.97,1]})}] }]}
+      style={[styles.card,{
+        opacity:fadeAnim,
+        transform:[
+          {translateY:slideAnim},
+          {scale:fadeAnim.interpolate({inputRange:[0,1],outputRange:[0.97,1]})}
+        ]
+      }]}
     >
       <TouchableOpacity
         style={styles.cardBtn}
         activeOpacity={0.9}
-        onPress={()=>navigation.navigate('DepartmentQuestionDetailScreen',{ soru:item, department:{ bolumadi:item.bolumad, bolumid:item.bolumid }})}
+        onPress={() =>
+          navigation.navigate('DepartmentQuestionDetailScreen', {
+            soru: item,
+            department: {
+              bolumadi: item.bolumad,
+              bolumid: item.bolumid,
+            },
+          })
+        }
       >
         <View style={styles.cardHeader}>
           <Icon name="help-circle-outline" size={20} color="#f75c5b" style={{marginRight:8}}/>
@@ -75,12 +107,11 @@ export default function FacultyQuestionScreen() {
           <Text style={styles.metaTxt}>{item.bolumad}</Text>
           <Icon name="chatbubble-ellipses-outline" size={14} color="#ff8a5c" style={{marginLeft:10}} />
           <Text style={styles.metaTxt}>{item.cevapsayisi} cevap</Text>
-           {/* 2. EKLE → kalp butonu */}
           <LikeButton
             soruId={item.soruid}
-            likedInit={item.kullaniciBegendiMi}   // backend bool alanı
-            countInit={item.begenisayisi}        // backend like sayısı
-            dark                                   // koyu tema (siyah yazılar)
+            likedInit={item.kullaniciBegendiMi}
+            countInit={item.begenisayisi}
+            dark
           />
         </View>
       </TouchableOpacity>
@@ -98,7 +129,7 @@ export default function FacultyQuestionScreen() {
 
       {loading ? (
         <View style={styles.loader}><ActivityIndicator color="#fff" size="large"/></View>
-      ) : questions.length===0 ? (
+      ) : questions.length === 0 ? (
         <View style={styles.emptyWrap}>
           <Icon name="help-circle-outline" size={48} color="#fff" style={{opacity:0.7,marginBottom:8}} />
           <Text style={styles.emptyTxt}>Henüz soru yok.</Text>
@@ -106,7 +137,7 @@ export default function FacultyQuestionScreen() {
       ) : (
         <FlatList
           data={questions}
-          keyExtractor={q=>q.soruid.toString()}
+          keyExtractor={q => q.soruid.toString()}
           renderItem={renderItem}
           contentContainerStyle={{paddingHorizontal:16,paddingBottom:30}}
           showsVerticalScrollIndicator={false}
