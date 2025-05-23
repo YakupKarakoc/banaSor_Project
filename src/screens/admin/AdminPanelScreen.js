@@ -29,7 +29,7 @@ const TAB_LIST = [
 
 export default function AdminPanelScreen({ navigation, route }) {
   const { token, user } = route.params || {};
-
+console.log('AdminPanel token:', token);
   // Ana veri
   const [activeTab,    setActiveTab]    = useState('forum');
   const [loading,      setLoading]      = useState(false);
@@ -411,9 +411,9 @@ if (showUsers) {
    </TouchableOpacity>
 
    +   <TouchableOpacity style={styles.navBtn} onPress={handleLeaveAdmin}>
-+     <Icon name="log-out-outline" size={20} color="#fff"/>
-+     <Text style={styles.navTxt}>Çıkış</Text>
-+   </TouchableOpacity>
+     <Icon name="log-out-outline" size={20} color="#fff"/>
+     <Text style={styles.navTxt}>Çıkış</Text>
+   </TouchableOpacity>
 
   </View>
 </View>

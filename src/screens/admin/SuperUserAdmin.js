@@ -85,6 +85,22 @@ export default function SuperUserAdmin({ navigation, route }) {
     ]);
   };
 
+  const makeDirectAdmin = async kullaniciId => {
+  try {
+    await axios.post(
+      `${BASE_URL}/api/admin/dogrudanAdmin`,
+      { kullaniciId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    Alert.alert('Başarılı', 'Kullanıcı doğrudan admin yapıldı.');
+    // istersen listeyi yenile:
+    fetchUsers();
+  } catch (e) {
+    Alert.alert('Hata', e.response?.data?.mesaj || e.message);
+  }
+};
+
+
    const fetchPending = async () => {
   setLoadingPending(true);
   try {
@@ -318,48 +334,59 @@ if (showUsers) {
       {usersLoading
         ? <ActivityIndicator size="large" color="#fff" style={{marginTop:20}}/>
         : (
-          <FlatList
-            data={users}
-            keyExtractor={u => String(u.kullaniciid)}
-            contentContainerStyle={{ padding:16 }}
-            ListEmptyComponent={<Text style={styles.emptyText}>Kullanıcı bulunamadı.</Text>}
-            renderItem={({ item }) => (
-              <View style={styles.userCard}>
-                <View style={{ flex:1 }}>
-                  <Text style={styles.userName}>
-                    {item.ad} {item.soyad} ({item.kullaniciadi})
-                  </Text>
-                  <Text style={styles.userMeta}>
-                    {item.email} • {item.kullanicirolu}
-                  </Text>
-                </View>
+         <FlatList
+  data={users}
+  keyExtractor={u => String(u.kullaniciid)}
+  contentContainerStyle={{ padding: 16 }}
+  ListEmptyComponent={<Text style={styles.emptyText}>Kullanıcı bulunamadı.</Text>}
+  renderItem={({ item }) => (
+    <View style={styles.userCard}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.userName}>
+          {item.ad} {item.soyad} ({item.kullaniciadi})
+        </Text>
+        <Text style={styles.userMeta}>
+          {item.email} • {item.kullanicirolu}
+        </Text>
+      </View>
 
-                {userFilter === 'admin' ? (
-                  // Admin listeleniyorsa: silme butonu
-                  toggling[item.kullaniciid]
-                    ? <ActivityIndicator size="small" color="#fff" />
-                    : (
-                      <TouchableOpacity
-                        style={styles.deleteBtn}
-                        onPress={() => handleRemoveAdmin(item.kullaniciid)}
-                      >
-                        <Icon name="remove-circle-outline" size={24} color="#fff" />
-                      </TouchableOpacity>
-                    )
-                ) : (
-                  // Diğer filtrelerde: toggle ile aktif/pasif
-                  toggling[item.kullaniciid]
-                    ? <ActivityIndicator size="small" color="#ff8a5c" />
-                    : (
-                      <Switch
-                        value={!!item.aktifmi}
-                        onValueChange={val => handleToggleUser(item.kullaniciid, val)}
-                      />
-                    )
-                )}
-              </View>
-            )}
-          />
+      {userFilter === 'admin' ? (
+        // “Adminler” filtresindeysek: silme butonu
+        toggling[item.kullaniciid]
+          ? <ActivityIndicator size="small" color="#fff" />
+          : (
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={() => handleRemoveAdmin(item.kullaniciid)}
+            >
+              <Icon name="remove-circle-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          )
+      ) : (
+        // Diğer filtrelerde: aktif/pasif toggle
+        toggling[item.kullaniciid]
+          ? <ActivityIndicator size="small" color="#ff8a5c" />
+          : (
+            <Switch
+              value={!!item.aktifmi}
+              onValueChange={val => handleToggleUser(item.kullaniciid, val)}
+            />
+          )
+      )}
+
+      {/* Yeni eklediğimiz “Yönetici Yap” butonu */}
+      <TouchableOpacity
+        style={styles.directAdminBtn}
+        onPress={() => makeDirectAdmin(item.kullaniciid)}
+      >
+        <Icon name="add-circle-outline" size={20} color="#fff" />
+        {/* Eğer yanında yazı da görmek istersen: */}
+        {/* <Text style={{ color:'#fff', marginLeft:4 }}>Admin Yap</Text> */}
+      </TouchableOpacity>
+    </View>
+  )}
+/>
+
         )
       }
     </LinearGradient>
@@ -616,6 +643,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  directAdminBtn: {
+  backgroundColor: '#4a90e2',
+  padding: 8,
+  borderRadius: 8,
+  marginLeft: 6,
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
 
   // TAB BAR
   tabBar: {
