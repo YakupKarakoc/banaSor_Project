@@ -24,7 +24,7 @@ const TAB_LIST = [
   { key: 'grup',  label: 'Gruplar' },
 ];
 
-export default function AdminPanelScreen({ navigation, route }) {
+export default function SuperUserAdmin({ navigation, route }) {
   const { token, user } = route.params || {};
 
   // Ana veri
@@ -40,10 +40,16 @@ export default function AdminPanelScreen({ navigation, route }) {
   const [searchName,   setSearchName]   = useState('');
   const [users,        setUsers]        = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [toggling,     setToggling]     = useState({});      // { [id]: boolean }
-
+  const [toggling,     setToggling]     = useState({});      // 
+  // 
+  // { [id]: boolean }
+ const [showPending,   setShowPending]   = useState(false);
+  const [pending,       setPending]       = useState([]);
+  const [loadingPending,setLoadingPending]= useState(false);
+  const [actionLoading, setActionLoading] = useState({}); // { [oneriId]: bool }
   useEffect(() => {
     fetchData();
+    fetchPending();  // yeni ekledik
   }, []);
 
   async function fetchData() {
@@ -78,6 +84,78 @@ export default function AdminPanelScreen({ navigation, route }) {
       }}
     ]);
   };
+
+   const fetchPending = async () => {
+  setLoadingPending(true);
+  try {
+    const res = await axios.get(
+      `${BASE_URL}/api/admin/bekleyenOneriler`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Gelen camel‐case olmayan alanları mapping yapıyoruz:
+   const mapped = res.data.map(r=>({
+  oneriId:               r.oneriId,
+  onerenKullaniciId:     r.onerenKullaniciId,
+  onerilenKullaniciId:   r.onerilenKullaniciId,
+  onerenKullaniciAdi:    r.onerenKullaniciAdi,
+  onerilenKullaniciAdi:  r.onerilenKullaniciAdi,
+  oneriTarihi:           r.oneriTarihi,
+}));
+
+
+    setPending(mapped);
+  } catch (err) {
+    Alert.alert('Hata', 'Bekleyen öneriler yüklenemedi.');
+  } finally {
+    setLoadingPending(false);
+  }
+};
+
+  const handleKarar = async (oneriId, karar, onerilenKullaniciId) => {
+  // Loading state’i aç
+  setActionLoading(prev => ({ ...prev, [oneriId]: true }));
+
+  try {
+    // 1) Superuser kararı kaydet
+    await axios.post(
+      `${BASE_URL}/api/admin/superUserKarar`,
+      { oneriId, karar },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // 2) Eğer onaylandıysa, doğrudan admin yap
+    if (karar === 'Onaylandi') {
+      if (!onerilenKullaniciId) {
+        throw new Error('Önerilen kullanıcı ID bulunamadı.');
+      }
+      await axios.post(
+        `${BASE_URL}/api/admin/dogrudanAdmin`,
+        { kullaniciId: onerilenKullaniciId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+
+    // 3) Listeyi yenile ve kullanıcıya bilgi ver
+    await fetchPending();
+    Alert.alert(
+      'Başarılı',
+      karar === 'Onaylandi'
+        ? 'Kullanıcı admin olarak atandı.'
+        : 'Öneri reddedildi.'
+    );
+
+  } catch (err) {
+    Alert.alert('Hata', err.response?.data?.mesaj || err.message);
+  } finally {
+    // Loading state’i kapat
+    setActionLoading(prev => ({ ...prev, [oneriId]: false }));
+  }
+};
+
+
+
+
   const handleDeleteSoru = id => { /* aynı pattern */
     Alert.alert('Soru Sil', 'Bu soruyu silmek istiyor musunuz?', [
       { text:'İptal', style:'cancel' },
@@ -288,6 +366,64 @@ if (showUsers) {
   );
 }
 
+  // ——— Bekleyen Öneriler Görünümü ———
+  if (showPending) {
+    return (
+      <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.homeBtn} onPress={()=>setShowPending(false)}>
+            <Icon name="arrow-back-outline" size={22} color="#fff"/>
+            <Text style={styles.homeBtnText}>Geri</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Bekleyen Öneriler</Text>
+        </View>
+
+        {loadingPending
+          ? <ActivityIndicator size="large" color="#fff" style={{marginTop:20}}/>
+          : (
+            <FlatList
+  data={pending}
+  keyExtractor={item => String(item.oneriId)}
+  contentContainerStyle={{ padding: 16 }}
+  ListEmptyComponent={
+    <Text style={styles.emptyText}>Bekleyen öneri yok.</Text>
+  }
+  renderItem={({ item }) => (
+    <View style={styles.proposalCard}>
+      <Text style={{ marginBottom: 8 }}>
+        <Text style={{ fontWeight: '700' }}>{item.onerenKullaniciAdi}</Text>
+        {' → '}
+        <Text style={{ fontWeight: '700' }}>{item.onerilenKullaniciAdi}</Text>
+      </Text>
+      <View style={{ flexDirection: 'row' }}>
+        {actionLoading[item.oneriId]
+          ? <ActivityIndicator />
+          : <>
+              <TouchableOpacity
+                style={styles.okBtn}
+                onPress={() => handleKarar(item.oneriId, 'Onaylandi', item.onerilenKullaniciId)}
+              >
+                <Text style={{ color: '#fff' }}>Onayla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.noBtn}
+                onPress={() => handleKarar(item.oneriId, 'Reddedildi')}
+              >
+                <Text style={{ color: '#fff' }}>Reddet</Text>
+              </TouchableOpacity>
+            </>
+        }
+      </View>
+    </View>
+  )}
+/>
+          )
+        }
+      </LinearGradient>
+    );
+  }
+
+
 
   // TAB_DATA tanımı
   const TAB_DATA = {
@@ -377,6 +513,15 @@ if (showUsers) {
     <Icon name="people-outline" size={20} color="#fff"/>
      <Text style={styles.navTxt}>Liste</Text>
    </TouchableOpacity>
+
+     <TouchableOpacity
+    style={styles.navBtn}
+    onPress={() => setShowPending(true)}
+  >
+    <Icon name="time-outline" size={20} color="#fff"/>
+    <Text style={styles.navTxt}>Öneriler</Text>
+  </TouchableOpacity>
+
   </View>
 </View>
 
@@ -581,4 +726,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
     flex: 1,
   },
+  proposalCard: {
+  backgroundColor:'#fff',
+  padding:12,
+  borderRadius:8,
+  marginBottom:12,
+},
+okBtn: {
+  backgroundColor:'#30d158',
+  paddingVertical:6,
+  paddingHorizontal:12,
+  borderRadius:6,
+  marginRight:8,
+},
+noBtn: {
+  backgroundColor:'#ff3b30',
+  paddingVertical:6,
+  paddingHorizontal:12,
+  borderRadius:6,
+},
+
 });

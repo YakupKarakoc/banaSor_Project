@@ -166,82 +166,126 @@ export default function AdminPanelScreen({ navigation, route }) {
     }
   };
 
-  // ——— Kullanıcı Listesi Görünümü ———
-  if (showUsers) {
-    return (
-      <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.homeBtn} onPress={onBackFromUsers}>
-            <Icon name="arrow-back-outline" size={22} color="#fff"/>
-            <Text style={styles.homeBtnText}>Geri</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Kullanıcı Listesi</Text>
-        </View>
-
-        <View style={styles.userFilterRow}>
-          {[
-            { key:'all',   label:'Tümü'    },
-            { key:'mezun', label:'Mezunlar'},
-            { key:'admin', label:'Adminler'}
-          ].map(btn=>(
-            <TouchableOpacity
-              key={btn.key}
-              style={[
-                styles.filterBtn,
-                userFilter===btn.key && styles.filterBtnActive
-              ]}
-              onPress={()=>{
-                setUserFilter(btn.key);
-                fetchUsers();
-              }}
-            >
-              <Text style={styles.filterTxt}>{btn.label}</Text>
-            </TouchableOpacity>
-          ))}
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Ara kullanıcı..."
-            placeholderTextColor="#ddd"
-            value={searchName}
-            onChangeText={setSearchName}
-            onSubmitEditing={fetchUsers}
-          />
-        </View>
-
-        {usersLoading
-          ? <ActivityIndicator size="large" color="#fff" style={{marginTop:20}}/>
-          : (
-            <FlatList
-              data={users}
-              keyExtractor={u => String(u.kullaniciid)}
-              contentContainerStyle={{ padding:16 }}
-              ListEmptyComponent={<Text style={styles.emptyText}>Kullanıcı bulunamadı.</Text>}
-              renderItem={({ item }) => (
-                <View style={styles.userCard}>
-                  <View style={{ flex:1 }}>
-                    <Text style={styles.userName}>
-                      {item.ad} {item.soyad} ({item.kullaniciadi})
-                    </Text>
-                    <Text style={styles.userMeta}>
-                      {item.email} • {item.kullanicirolu}
-                    </Text>
-                  </View>
-                  { toggling[item.kullaniciid]
-                    ? <ActivityIndicator size="small" color="#ff8a5c" />
-                    : (
-                      <Switch
-                        value={!!item.aktifmi}
-                        onValueChange={val => handleToggleUser(item.kullaniciid, val)}
-                      />
-                    )}
-                </View>
-              )}
-            />
-          )
-        }
-      </LinearGradient>
+  // Kullanıcıyı admin adayı olarak önerir
+const handleAdminOner = async (onerilenKullaniciId) => {
+  try {
+    await axios.post(
+      `${BASE_URL}/api/admin/adminOner`,
+      { onerilenKullaniciId },
+      { headers: { Authorization: `Bearer ${token}` } }
     );
+    Alert.alert('Başarılı', 'Admin önerisi gönderildi.');
+  } catch (e) {
+    Alert.alert('Hata', e.response?.data?.message || e.message);
   }
+};
+
+ {/* ——— Kullanıcı Listesi Görünümü ——— */}
+if (showUsers) {
+  return (
+    <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.container}>
+      {/* başlık */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.homeBtn} onPress={onBackFromUsers}>
+          <Icon name="arrow-back-outline" size={22} color="#fff"/>
+          <Text style={styles.homeBtnText}>Geri</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Kullanıcı Listesi</Text>
+      </View>
+
+      {/* filtreler ve arama */}
+      <View style={styles.userFilterRow}>
+        {[{ key:'all', label:'Tümü' },{ key:'mezun', label:'Mezunlar' },{ key:'admin', label:'Adminler' }].map(btn=>(
+          <TouchableOpacity
+            key={btn.key}
+            style={[
+              styles.filterBtn,
+              userFilter===btn.key && styles.filterBtnActive
+            ]}
+            onPress={()=>{
+              setUserFilter(btn.key);
+              fetchUsers();
+            }}
+          >
+            <Text style={styles.filterTxt}>{btn.label}</Text>
+          </TouchableOpacity>
+        ))}
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Ara kullanıcı..."
+          placeholderTextColor="#ddd"
+          value={searchName}
+          onChangeText={setSearchName}
+          onSubmitEditing={fetchUsers}
+        />
+      </View>
+
+      {/* liste */}
+      {usersLoading
+        ? <ActivityIndicator size="large" color="#fff" style={{marginTop:20}}/>
+        : (
+          <FlatList
+            data={users}
+            keyExtractor={u=>String(u.kullaniciid)}
+            contentContainerStyle={{ padding:16 }}
+            ListEmptyComponent={<Text style={styles.emptyText}>Kullanıcı bulunamadı.</Text>}
+            renderItem={({ item }) => (
+              <View style={styles.userCard}>
+                {/* kullanıcı bilgisi */}
+                <View style={{ flex:1 }}>
+                  <Text style={styles.userName}>
+                    {item.ad} {item.soyad} ({item.kullaniciadi})
+                  </Text>
+                  <Text style={styles.userMeta}>
+                    {item.email} • {item.kullanicirolu}
+                  </Text>
+                </View>
+
+                {/* sağ tarafta: ya toggle ya sil/öner butonu */}
+                <View style={{ flexDirection:'row', alignItems:'center' }}>
+                  {userFilter === 'admin' ? (
+                    // admin listeleniyorsa => sil butonu
+                    toggling[item.kullaniciid]
+                      ? <ActivityIndicator size="small" color="#fff"/>
+                      : (
+                        <TouchableOpacity
+                          style={styles.deleteBtn}
+                          onPress={()=>handleRemoveAdmin(item.kullaniciid)}
+                        >
+                          <Icon name="remove-circle-outline" size={24} color="#fff"/>
+                        </TouchableOpacity>
+                      )
+                  ) : (
+                    // diğer filtrelerde => aktif/pasif toggle
+                    toggling[item.kullaniciid]
+                      ? <ActivityIndicator size="small" color="#ff8a5c"/>
+                      : (
+                        <Switch
+                          value={!!item.aktifmi}
+                          onValueChange={val=>handleToggleUser(item.kullaniciid, val)}
+                        />
+                      )
+                  )}
+
+                  {/* admin değilse ayrıca ÖNER butonu */}
+                  {userFilter === 'all' && item.kullanicirolu !== 'Admin' && (
+                    <TouchableOpacity
+                      style={styles.proposeBtn}
+                      onPress={()=>handleAdminOner(item.kullaniciid)}
+                    >
+                      <Icon name="person-add-outline" size={24} color="#fff"/>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            )}
+          />
+        )
+      }
+    </LinearGradient>
+  );
+}
+
 
   // TAB_DATA tanımı
   const TAB_DATA = {
@@ -510,6 +554,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     color: '#333',
   },
+  proposeBtn: {
+  backgroundColor: '#30a0ff',
+  padding: 6,
+  borderRadius: 16,
+  marginLeft: 8,
+},
 
   userCard: {
     flexDirection: 'row',
