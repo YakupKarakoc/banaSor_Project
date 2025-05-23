@@ -63,6 +63,7 @@ import AdminForumDetay from './src/screens/admin/AdminForumDetay';
 import AdminSoruDetay from './src/screens/admin/AdminSoruDetay';
 import SuperUserAdmin from './src/screens/admin/SuperUserAdmin';
 import EntityActivationScreen from './src/screens/admin/EntityActivationScreen';
+import PendingSuggestionsScreen from './src/screens/admin/PendingSuggestionsScreen';
 
 
 
@@ -158,6 +159,12 @@ export default function App() {
   component={EntityActivationScreen}
   options={{ title: 'Fakülte/Bölüm Yönetimi' }}
 />
+
+ <Stack.Screen
+        name="PendingSuggestions"
+        component={PendingSuggestionsScreen}
+        options={{ headerShown: false }}
+      />
 
 
         

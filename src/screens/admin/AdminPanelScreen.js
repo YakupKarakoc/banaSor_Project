@@ -24,6 +24,9 @@ const TAB_LIST = [
   { key: 'grup',  label: 'Gruplar' },
 ];
 
+
+
+
 export default function AdminPanelScreen({ navigation, route }) {
   const { token, user } = route.params || {};
 
@@ -40,11 +43,16 @@ export default function AdminPanelScreen({ navigation, route }) {
   const [searchName,   setSearchName]   = useState('');
   const [users,        setUsers]        = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [toggling,     setToggling]     = useState({});      // { [id]: boolean }
+  const [toggling,     setToggling]     = useState({});      
+  
+  // { [id]: boolean }
 
+  
   useEffect(() => {
     fetchData();
   }, []);
+
+
 
   async function fetchData() {
     setLoading(true);
@@ -77,6 +85,32 @@ export default function AdminPanelScreen({ navigation, route }) {
           }
       }}
     ]);
+  };
+
+    // AdminPanelScreen fonksiyonunun en üstüne, useEffect’in yanına vb. ekle
+ const handleLeaveAdmin = async () => {
+    try {
+      await axios.post(
+        `${BASE_URL}/api/admin/adminliktenAyril`,
+        {}, // body yok
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      Alert.alert(
+        'Başarılı',
+        'Adminlikten ayrıldınız.',
+        [
+          {
+            text: 'Tamam',
+            onPress: () => navigation.replace('Home', { user })
+          }
+        ]
+      );
+    } catch (e) {
+      Alert.alert(
+        'Hata',
+        e.response?.data?.mesaj || e.response?.data?.message || e.message
+      );
+    }
   };
   const handleDeleteSoru = id => { /* aynı pattern */
     Alert.alert('Soru Sil', 'Bu soruyu silmek istiyor musunuz?', [
@@ -375,6 +409,12 @@ if (showUsers) {
     <Icon name="people-outline" size={20} color="#fff"/>
      <Text style={styles.navTxt}>Liste</Text>
    </TouchableOpacity>
+
+   +   <TouchableOpacity style={styles.navBtn} onPress={handleLeaveAdmin}>
++     <Icon name="log-out-outline" size={20} color="#fff"/>
++     <Text style={styles.navTxt}>Çıkış</Text>
++   </TouchableOpacity>
+
   </View>
 </View>
 
@@ -436,20 +476,18 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   navBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ff8a5c',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 16,
-    marginLeft: 6,
-  },
-  navTxt: {
-    color: '#fff',
-    marginLeft: 4,
-    fontWeight: '600',
-    fontSize: 14,
-  },
+  flexDirection:'row',
+  alignItems:'center',
+  backgroundColor:'#ff8a5c',
+  paddingVertical:4,
+  paddingHorizontal:8,
+  borderRadius:16,
+  marginLeft:6,
+},
+navTxt:{
+  color:'#fff', marginLeft:4, fontWeight:'600', fontSize:14
+},
+
 
   // TAB BAR
   tabBar: {

@@ -381,7 +381,7 @@ if (showUsers) {
         {loadingPending
           ? <ActivityIndicator size="large" color="#fff" style={{marginTop:20}}/>
           : (
-            <FlatList
+<FlatList
   data={pending}
   keyExtractor={item => String(item.oneriId)}
   contentContainerStyle={{ padding: 16 }}
@@ -390,33 +390,51 @@ if (showUsers) {
   }
   renderItem={({ item }) => (
     <View style={styles.proposalCard}>
+      {/* Öneren → Önerilen */}
       <Text style={{ marginBottom: 8 }}>
         <Text style={{ fontWeight: '700' }}>{item.onerenKullaniciAdi}</Text>
         {' → '}
         <Text style={{ fontWeight: '700' }}>{item.onerilenKullaniciAdi}</Text>
       </Text>
+
       <View style={{ flexDirection: 'row' }}>
-        {actionLoading[item.oneriId]
-          ? <ActivityIndicator />
-          : <>
-              <TouchableOpacity
-                style={styles.okBtn}
-                onPress={() => handleKarar(item.oneriId, 'Onaylandi', item.onerilenKullaniciId)}
-              >
-                <Text style={{ color: '#fff' }}>Onayla</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.noBtn}
-                onPress={() => handleKarar(item.oneriId, 'Reddedildi')}
-              >
-                <Text style={{ color: '#fff' }}>Reddet</Text>
-              </TouchableOpacity>
-            </>
-        }
+        {actionLoading[item.oneriId] ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <>
+            {/* Onayla: karar + önerilenKullaniciId */}
+            <TouchableOpacity
+              style={styles.okBtn}
+              onPress={() =>
+                handleKarar(
+                  item.oneriId,
+                  'Onaylandi',
+                  item.onerilenKullaniciId
+                )
+              }
+            >
+              <Text style={{ color: '#fff' }}>Onayla</Text>
+            </TouchableOpacity>
+
+            {/* Reddet: sadece karar */}
+            <TouchableOpacity
+              style={styles.noBtn}
+              onPress={() =>
+                handleKarar(
+                  item.oneriId,
+                  'Reddedildi'
+                )
+              }
+            >
+              <Text style={{ color: '#fff' }}>Reddet</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </View>
   )}
 />
+
           )
         }
       </LinearGradient>
@@ -514,13 +532,14 @@ if (showUsers) {
      <Text style={styles.navTxt}>Liste</Text>
    </TouchableOpacity>
 
-     <TouchableOpacity
-    style={styles.navBtn}
-    onPress={() => setShowPending(true)}
-  >
-    <Icon name="time-outline" size={20} color="#fff"/>
-    <Text style={styles.navTxt}>Öneriler</Text>
-  </TouchableOpacity>
+    <TouchableOpacity
+  style={styles.navBtn}
+  onPress={() => navigation.navigate('PendingSuggestions', { token })}  // <—— burayı güncelledik
+>
+  <Icon name="time-outline" size={20} color="#fff" />
+  <Text style={styles.navTxt}>Öneriler</Text>
+</TouchableOpacity>
+
 
   </View>
 </View>
