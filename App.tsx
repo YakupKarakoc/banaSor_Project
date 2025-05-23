@@ -62,6 +62,7 @@ import AdminPanelScreen from './src/screens/admin/AdminPanelScreen';
 import AdminForumDetay from './src/screens/admin/AdminForumDetay';
 import AdminSoruDetay from './src/screens/admin/AdminSoruDetay';
 import SuperUserAdmin from './src/screens/admin/SuperUserAdmin';
+import EntityActivationScreen from './src/screens/admin/EntityActivationScreen';
 
 
 
@@ -152,6 +153,11 @@ export default function App() {
   <Stack.Screen name="AdminForumDetay" component={AdminForumDetay} />
   <Stack.Screen name="AdminSoruDetay" component={AdminSoruDetay} />
     <Stack.Screen name="SuperUserAdmin" component={SuperUserAdmin} />
+    <Stack.Screen
+  name="EntityActivation"
+  component={EntityActivationScreen}
+  options={{ title: 'Fakülte/Bölüm Yönetimi' }}
+/>
 
 
         

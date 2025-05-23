@@ -1,5 +1,3 @@
-// src/screens/Giris_islemleri/Login.js
-
 import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
@@ -20,8 +18,9 @@ import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { saveToken } from '../../utils/auth';  // ← token saklama
+import { saveToken } from '../../utils/auth';  // token saklama
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -54,44 +53,44 @@ const LoginScreen = () => {
     Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true })
       .start(() => handleLogin());
 
-const handleLogin = async () => {
-  try {
-    const r = await axios.post(
-      'http://10.0.2.2:3000/api/auth/login',
-      { email, sifre: password }
-    );
+  const handleLogin = async () => {
+    try {
+      const r = await axios.post(
+        'http://10.0.2.2:3000/api/auth/login',
+        { email, sifre: password }
+      );
 
-    if (r.data.error) {
-      return Alert.alert('Hata', r.data.error);
+      if (r.data.error) {
+        return Alert.alert('Hata', r.data.error);
+      }
+
+      const token = r.data.token;
+      // 1️⃣ util ile sakla (authToken)
+      await saveToken(token);
+      // 2️⃣ eski ekranlar için de 'token' anahtarıyla sakla
+      await AsyncStorage.setItem('token', token);
+
+      // 3️⃣ header'a ekle
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      const userObj = r.data.user ?? r.data;
+      const role = String(userObj.kullanicirolu).toLowerCase();
+
+      // Giriş yönlendirmeleri
+      if (role === 'superuser') {
+        return navigation.replace('SuperUserAdmin', { user: userObj, token });
+      } else if (role === 'admin') {
+        return navigation.replace('AdminPanel', { user: userObj, token });
+      } else {
+        return navigation.replace('Home', { user: userObj });
+      }
+
+    } catch (e) {
+      Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
     }
+  };
 
-    const token = r.data.token;
-    await saveToken(token);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-    const userObj = r.data.user ?? r.data;
-    const role = String(userObj.kullanicirolu).toLowerCase();
-
-    // ✅ GİRİŞ YÖNLENDİRMELERİ
-    if (role === 'superuser') {
-      return navigation.replace('SuperUserAdmin', { user: userObj, token });
-    } else if (role === 'admin') {
-      return navigation.replace('AdminPanel', { user: userObj, token });
-    } else {
-      return navigation.replace('Home', { user: userObj });
-    }
-
-  } catch (e) {
-    Alert.alert('Sunucu hatası', e.response?.data?.error || e.message);
-  }
-};
-
-
-
-
-
-
-  // --- ŞİFRE SIFIRLAMA ADIM 1 ---
+  // Şifre sıfırlama adımları
   const sendResetCode = async () => {
     try {
       await axios.post('http://10.0.2.2:3000/api/auth/forgotPassword', { email: resetEmail });
@@ -102,7 +101,6 @@ const handleLogin = async () => {
     }
   };
 
-  // --- ŞİFRE SIFIRLAMA ADIM 2 ---
   const applyNewPassword = async () => {
     if (newPass.length < 6) {
       return Alert.alert('Hata', 'Yeni şifre en az 6 karakter olmalı.');
@@ -268,10 +266,6 @@ const handleLogin = async () => {
 
 export default LoginScreen;
 
-// —————————————————————————————————————————
-//  (Aşağıda stil bloğu aynı kaldı; gerektiğinde özelleştirebilirsin)
-// —————————————————————————————————————————
-
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -422,50 +416,5 @@ const styles = StyleSheet.create({
     position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#2D3436',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  modalInput: {
-    width: '100%',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-    height: 55,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    color: '#2D3436',
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-  },
-  modalBtn: {
-    backgroundColor: '#FF3D00',
-    borderRadius: 25,
-    paddingVertical: 14,
-    alignItems: 'center',
-    shadowColor: '#FF3D00',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  modalBtnText: { 
-    color: '#FFF', 
-    fontSize: 16, 
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  modalClose: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    padding: 5,
-  },
-});
+    shadowOpacity: 0.2
+  }})
