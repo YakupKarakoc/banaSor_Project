@@ -20,6 +20,7 @@ export default function GraduateComplete({ route, navigation }) {
   const [ref1, setRef1] = useState('');
   const [ref2, setRef2] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     axios.get(`${BASE_URL}/api/education/university`)
@@ -34,10 +35,45 @@ export default function GraduateComplete({ route, navigation }) {
       .catch(() => Alert.alert('Hata','Bölümler yüklenemedi'));
   }, [selUni]);
 
+  // Email validation function
+  const validateEduEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.toLowerCase().endsWith('.edu.tr');
+  };
+
+  // Reference email change handlers
+  const handleRef1Change = (text) => {
+    setRef1(text.toLowerCase().trim());
+    if (text && !validateEduEmail(text)) {
+      setErrors(prev => ({ ...prev, ref1: 'Referans e-posta .edu.tr uzantılı olmalı' }));
+    } else {
+      setErrors(prev => ({ ...prev, ref1: null }));
+    }
+  };
+
+  const handleRef2Change = (text) => {
+    setRef2(text.toLowerCase().trim());
+    if (text && !validateEduEmail(text)) {
+      setErrors(prev => ({ ...prev, ref2: 'Referans e-posta .edu.tr uzantılı olmalı' }));
+    } else {
+      setErrors(prev => ({ ...prev, ref2: null }));
+    }
+  };
+
   const submit = async () => {
     if (!selUni || !selDept || !ref1 || !ref2) {
       return Alert.alert('Hata','Tüm alanları doldurun.');
     }
+    
+    // Referans email validasyonu
+    if (!validateEduEmail(ref1)) {
+      return Alert.alert('Hata', 'İlk referans e-posta adresi .edu.tr uzantılı olmalı');
+    }
+    
+    if (!validateEduEmail(ref2)) {
+      return Alert.alert('Hata', 'İkinci referans e-posta adresi .edu.tr uzantılı olmalı');
+    }
+    
     setLoading(true);
     try {
       await axios.post(`${BASE_URL}/api/mezun/dogrulama-baslat`, {
@@ -92,21 +128,24 @@ export default function GraduateComplete({ route, navigation }) {
         </View>
 
         <TextInput
-          style={styles.inputModern}
-          placeholder="Referans E-posta 1"
+          style={[styles.inputModern, errors.ref1 && styles.inputError]}
+          placeholder="Referans E-posta 1 (örn: prof@uni.edu.tr)"
           placeholderTextColor="#f75c5b"
           keyboardType="email-address"
           value={ref1}
-          onChangeText={setRef1}
+          onChangeText={handleRef1Change}
         />
+        {errors.ref1 && <Text style={styles.errorText}>{errors.ref1}</Text>}
+        
         <TextInput
-          style={styles.inputModern}
-          placeholder="Referans E-posta 2"
+          style={[styles.inputModern, errors.ref2 && styles.inputError]}
+          placeholder="Referans E-posta 2 (örn: dr@uni.edu.tr)"
           placeholderTextColor="#f75c5b"
           keyboardType="email-address"
           value={ref2}
-          onChangeText={setRef2}
+          onChangeText={handleRef2Change}
         />
+        {errors.ref2 && <Text style={styles.errorText}>{errors.ref2}</Text>}
 
         <TouchableOpacity style={styles.buttonModern} onPress={submit}>
           <Text style={styles.btnTextModern}>Kaydı Tamamla</Text>
@@ -127,4 +166,6 @@ const styles = StyleSheet.create({
   inputModern: { backgroundColor:'#fff', borderRadius:16, paddingHorizontal:14, height:48, marginBottom:16, color:'#2D3436', fontSize:16, shadowColor:'#f75c5b', shadowOffset:{width:0,height:2}, shadowOpacity:0.10, shadowRadius:8, elevation:2 },
   buttonModern: { backgroundColor:'#fff', borderRadius:25, paddingVertical:15, alignItems:'center', marginTop:16, shadowColor:'#f75c5b', shadowOffset:{width:0,height:4}, shadowOpacity:0.13, shadowRadius:8, elevation:4 },
   btnTextModern: { color:'#f75c5b', fontWeight:'800', fontSize:17, letterSpacing:0.2 },
+  inputError: { borderColor: 'red', borderWidth: 1 },
+  errorText: { color: 'red', marginTop: 5 },
 });

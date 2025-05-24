@@ -51,17 +51,19 @@ export default function ProfileScreen() {
     return Alert.alert('Hata', 'Ad, soyad ve kullanıcı adı boş bırakılamaz.');
   }
 
-  // Değişiklik yoksa uyar
-  if (
-    ad === initialUser.ad &&
-    soyad === initialUser.soyad &&
-    (kullaniciAdi === (initialUser.kullaniciAdi ?? initialUser.kullaniciadi)) &&
+  // Değişiklik kontrolü
+  const hasChanges = (
+    ad !== initialUser.ad ||
+    soyad !== initialUser.soyad ||
+    (kullaniciAdi !== (initialUser.kullaniciAdi ?? initialUser.kullaniciadi)) ||
     (typeof initialUser.aktifMi === "boolean"
-      ? aktifMi === initialUser.aktifMi
-      : aktifMi === initialUser.aktifmi
-    ) &&
-    !sifre.trim()
-  ) {
+      ? aktifMi !== initialUser.aktifMi
+      : aktifMi !== initialUser.aktifmi
+    ) ||
+    sifre.trim() // Şifre değiştirilmişse de bir değişiklik var
+  );
+
+  if (!hasChanges) {
     return Alert.alert('Uyarı', 'Hiçbir değişiklik yapmadınız.');
   }
 
@@ -74,9 +76,17 @@ export default function ProfileScreen() {
       kullaniciAdi,
       aktifMi,
     };
-    if (sifre.trim()) body.sifre = sifre;
+    
+    // Şifre sadece doldurulmuşsa gönder, boşsa hiç gönderme ki mevcut şifre korunsun
+    if (sifre.trim()) {
+      body.sifre = sifre;
+    }
+
+    console.log('Profil güncelleme body:', body); // Debug için
 
     const res = await axios.put(`${BASE_URL}/api/profil/guncelle`, body);
+
+    console.log('API Response:', res.data); // Debug için
 
     // Response'u güvenli kontrol et
     if (res?.data && typeof res.data === 'object' && res.data.kullanici) {
@@ -89,12 +99,21 @@ export default function ProfileScreen() {
       ]);
     } else {
       // Backend başarılı ama beklenen veri formatı yoksa, yine de başarılı say!
+      const updatedUser = {
+        ...initialUser,
+        ad,
+        soyad,
+        kullaniciAdi,
+        aktifMi,
+      };
       Alert.alert('Başarılı', 'Profiliniz güncellendi.', [
-        { text: 'Tamam', onPress: () => navigation.replace('Home', { user: initialUser }) },
+        { text: 'Tamam', onPress: () => navigation.replace('Home', { user: updatedUser }) },
       ]);
     }
   } catch (e) {
-    // Sadece gerçek hata durumunda uyarı ver
+    console.error('Profil güncelleme hatası:', e);
+    console.error('Error details:', e.response?.data); // Daha detaylı hata bilgisi
+    
     const errorMsg =
       e.response?.data?.mesaj ||
       e.response?.data?.message ||
@@ -104,6 +123,7 @@ export default function ProfileScreen() {
   } finally {
     setLoading(false);
     setIsEditing(false);
+    setSifre(''); // Şifreyi temizle
   }
 };
 

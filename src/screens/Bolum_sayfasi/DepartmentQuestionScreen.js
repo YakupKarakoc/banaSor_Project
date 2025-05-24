@@ -21,19 +21,34 @@ const BASE = 'http://10.0.2.2:3000';
 
 export default function DepartmentQuestionScreen() {
   const { universite, faculty, department } = useRoute().params;
-  const bolumId      = department.bolumid;
-  const navigation   = useNavigation();
-  const isFocused    = useIsFocused();
+  const bolumId = department.bolumid;
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
 
   const [questions, setQuestions] = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [fadeAnim]  = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(50));
+  const [loading, setLoading] = useState(true);
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(40));
 
   useEffect(() => {
     if (isFocused) loadQuestions();
-    startAnim();
+    startAnimations();
   }, [isFocused]);
+
+  const startAnimations = () => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const loadQuestions = async () => {
     setLoading(true);
@@ -65,42 +80,48 @@ export default function DepartmentQuestionScreen() {
     }
   };
 
-  const startAnim = () => {
-    Animated.parallel([
-      Animated.timing(fadeAnim,  { toValue:1,duration:700,useNativeDriver:true }),
-      Animated.timing(slideAnim, { toValue:0,duration:700,useNativeDriver:true }),
-    ]).start();
-  };
-
-  const renderItem = ({ item }) => (
-    <Animated.View style={[styles.card,{
-      opacity: fadeAnim,
-      transform: [
-        { translateY: slideAnim },
-        { scale: fadeAnim.interpolate({ inputRange:[0,1], outputRange:[0.97,1] }) }
-      ]
-    }]}>
+  const renderQuestion = (item) => (
+    <Animated.View
+      key={item.soruid}
+      style={[
+        styles.card,
+        {
+          opacity: fadeAnim,
+          transform: [
+            { translateY: slideAnim },
+            {
+              scale: fadeAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.97, 1],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
       <TouchableOpacity
         style={styles.cardBtn}
-        activeOpacity={0.9}
         onPress={() => navigation.navigate('DepartmentQuestionDetailScreen', {
           soru: item,
           universite,
           faculty,
           department
         })}
+        activeOpacity={0.9}
       >
         <View style={styles.cardHeader}>
           <Icon name="help-circle-outline" size={20} color="#f75c5b" style={styles.cardIcon} />
           <Text style={styles.cardTitle} numberOfLines={2}>{item.icerik}</Text>
         </View>
-
-        <View style={styles.metaRow}>
-          <Icon name="person-outline" size={14} color="#ff8a5c" />
-          <Text style={styles.metaText}>{item.kullaniciadi}</Text>
-          <Icon name="chatbubble-ellipses-outline" size={14} color="#ff8a5c" style={{ marginLeft:10 }} />
-          <Text style={styles.metaText}>{item.cevapsayisi} cevap</Text>
-
+        <View style={styles.cardMeta}>
+          <View style={styles.metaItem}>
+            <Icon name="person-outline" size={14} color="#f75c5b" />
+            <Text style={styles.metaText}>{item.kullaniciadi}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Icon name="chatbubble-ellipses-outline" size={14} color="#f75c5b" />
+            <Text style={styles.metaText}>{item.cevapsayisi} cevap</Text>
+          </View>
           <LikeButton
             soruId={item.soruid}
             likedInit={item.kullaniciBegendiMi}
@@ -113,34 +134,43 @@ export default function DepartmentQuestionScreen() {
   );
 
   return (
-    <LinearGradient colors={["#f75c5b","#ff8a5c"]} style={{flex:1}}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerLeft}>
-          <Icon name="help-circle-outline" size={26} color="#fff" style={{ marginRight:6 }} />
-          <Text style={styles.headerTitle}>{department.bolumadi} – Sorular</Text>
+    <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
+      {/* Simple Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Icon name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={styles.headerInfo}>
+          <Icon name="help-circle-outline" size={36} color="#fff" style={styles.headerIcon} />
+          <Text style={styles.title}>Bölüm Soruları</Text>
+          <Text style={styles.subTitle}>{department.bolumadi}</Text>
         </View>
         <TouchableOpacity
-          style={styles.newBtn}
+          style={styles.addBtn}
           onPress={() => navigation.navigate('NewDepartmentQuestionScreen', { bolumId })}
         >
-          <Icon name="add-circle-outline" size={18} color="#f75c5b" style={{ marginRight:4 }} />
-          <Text style={styles.newBtnText}>Yeni Soru</Text>
+          <Icon name="add" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
+      {/* Content */}
       {loading ? (
-        <View style={styles.loader}><ActivityIndicator color="#fff" size="large"/></View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color="#fff" size="large" />
+          <Text style={styles.loadingText}>Sorular yükleniyor...</Text>
+        </View>
       ) : questions.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <Icon name="help-circle-outline" size={48} color="#fff" style={{ opacity:0.7, marginBottom:8 }} />
-          <Text style={styles.emptyText}>Henüz soru yok.</Text>
+        <View style={styles.emptyContainer}>
+          <Icon name="help-circle-outline" size={48} color="#fff" style={{ opacity: 0.7, marginBottom: 8 }} />
+          <Text style={styles.emptyText}>Henüz soru yok</Text>
+          <Text style={styles.emptySubText}>Bu bölümde ilk soruyu sorarak başla!</Text>
         </View>
       ) : (
         <FlatList
           data={questions}
           keyExtractor={q => q.soruid.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingHorizontal:16, paddingBottom:30 }}
+          renderItem={({ item }) => renderQuestion(item)}
+          contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -149,19 +179,110 @@ export default function DepartmentQuestionScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerRow:{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', padding:20, paddingTop:48 },
-  headerLeft:{ flexDirection:'row', alignItems:'center', flexShrink:1 },
-  headerTitle:{ color:'#fff', fontSize:18, fontWeight:'700', flexShrink:1 },
-  newBtn:{ flexDirection:'row', alignItems:'center', backgroundColor:'#fff', paddingHorizontal:14, paddingVertical:6, borderRadius:20 },
-  newBtnText:{ color:'#f75c5b', fontWeight:'700', fontSize:14 },
-  loader:{ flex:1, justifyContent:'center', alignItems:'center' },
-  emptyWrap:{ flex:1, justifyContent:'center', alignItems:'center', marginTop:40 },
-  emptyText:{ color:'#fff', opacity:0.8 },
-  card:{ backgroundColor:'#fff', borderRadius:16, marginVertical:6, shadowColor:'#000', shadowOffset:{width:0,height:4}, shadowOpacity:0.08, shadowRadius:8, elevation:4, borderWidth:1, borderColor:'rgba(0,0,0,0.04)' },
-  cardBtn:{ padding:16 },
-  cardHeader:{ flexDirection:'row', alignItems:'center', marginBottom:6 },
-  cardIcon:{ marginRight:8 },
-  cardTitle:{ fontSize:15, fontWeight:'700', color:'#2D3436', flex:1 },
-  metaRow:{ flexDirection:'row', alignItems:'center' },
-  metaText:{ fontSize:12, color:'#666', marginLeft:4 },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    paddingTop: 48,
+  },
+  backBtn: {
+    padding: 8,
+  },
+  headerInfo: {
+    flexDirection: 'column',
+    flex: 1,
+  },
+  headerIcon: {
+    marginBottom: 8,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  subTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  addBtn: {
+    padding: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#fff',
+    opacity: 0.8,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  emptySubText: {
+    color: '#fff',
+    opacity: 0.8,
+    fontSize: 14,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  cardBtn: {
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  cardIcon: {
+    marginRight: 8,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2D3436',
+    flex: 1,
+  },
+  cardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+  },
 });

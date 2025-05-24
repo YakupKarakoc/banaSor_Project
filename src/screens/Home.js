@@ -4,11 +4,12 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput,
   TouchableOpacity,
   Image,
   ScrollView,
   Animated,
+  StatusBar,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -17,10 +18,9 @@ import * as Animatable from 'react-native-animatable';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const route      = useRoute();
+  const route = useRoute();
 
-  const [user, setUser]         = useState(route.params?.user || null);
-  const [searchValue, setSearchValue] = useState('');
+  const [user, setUser] = useState(route.params?.user || null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   /* user update */
@@ -28,158 +28,263 @@ const HomeScreen = () => {
     if (route.params?.user) setUser(route.params.user);
   }, [route.params?.user]);
 
-  /* fade-in */
+  /* smooth animations */
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue:1, duration:600, useNativeDriver:true }).start();
+    Animated.timing(fadeAnim, { 
+      toValue: 1, 
+      duration: 800, 
+      useNativeDriver: true 
+    }).start();
   }, []);
 
   const username = user?.kullaniciadi || 'Misafir';
+  const userFullName = user ? `${user.ad || ''} ${user.soyad || ''}`.trim() : '';
 
-  /* —— MENU —— */
+  /* —— CLEAN MENU —— */
   const menuItems = [
     {
       label: 'Üniversiteler',
-      icon : 'school-outline',
+      icon: 'school-outline',
       onPress: () => navigation.navigate('Universiteler'),
     },
     {
-      label: 'Konular',          // ✅ etiket güncellendi
-      icon : 'chatbubbles-outline',
+      label: 'Konular',
+      icon: 'chatbubbles-outline', 
       onPress: () => navigation.navigate('Konular'),
     },
-   {
-  label: 'Topluluklar',
-  icon : 'people-outline',
-  onPress: () => navigation.navigate('GroupList'), // 'GroupList' route adı
-},
+    {
+      label: 'Topluluklar',
+      icon: 'people-outline',
+      onPress: () => navigation.navigate('GroupList'),
+    },
     {
       label: 'Favoriler',
-      icon : 'star-outline',
+      icon: 'star-outline',
       onPress: () => navigation.navigate('Favoriler'),
     },
-    // {
-    //   label: 'Mesajlar',
-    //   icon : 'mail-outline',
-    //   onPress: () => navigation.navigate('Messages'),
-    // },
     {
-      label: 'Profilim',
-      icon : 'person-circle-outline',
+      label: 'Profilim', 
+      icon: 'person-circle-outline',
       onPress: () => navigation.navigate('Profile', { user }),
     },
-    /* 🔹 YENİ BÖLÜM — Bana Ait içerikler */
     {
       label: 'Bana Ait',
-      icon : 'folder-open-outline',
-      onPress: () => navigation.navigate('MyContent'),   // bu ekranı sonra oluşturacağız
+      icon: 'folder-open-outline',
+      onPress: () => navigation.navigate('MyContent'),
     },
   ];
 
   const handleLogout = () => navigation.replace('Login');
 
   return (
-    <LinearGradient colors={['#f75c5b','#ff8a5c']} style={styles.gradientContainer}>
-      {/* ---------- Header ---------- */}
-      <Animatable.View animation="fadeInDown" duration={800} style={styles.header}>
-        <View style={styles.logoShadow}>
-          <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo}/>
-        </View>
+    <SafeAreaView style={styles.safeContainer}>
+      <StatusBar backgroundColor="#f75c5b" barStyle="light-content" />
+      <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.gradientContainer}>
+        
+        {/* ---------- CLEAN HEADER ---------- */}
+        <Animatable.View animation="fadeInDown" duration={800} style={styles.header}>
+          <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
+            <View style={styles.logoContainer}>
+              <View style={styles.logoShadow}>
+                <Image source={require('../assets/images/banaSor_logo.jpg')} style={styles.logo}/>
+              </View>
+            </View>
 
-        <View style={styles.headerText}>
-          <Text style={styles.welcomeText}>Hoş Geldin,</Text>
-          <Text style={styles.usernameText}>{username}!</Text>
-        </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.welcomeText}>Hoş Geldin</Text>
+              <Text style={styles.usernameText}>{userFullName || username}</Text>
+            </View>
 
-        <TouchableOpacity style={styles.profileIconWrapper}
-          onPress={()=>navigation.navigate('Profile', { user })}>
-          <Ionicons name="person-circle-outline" size={38} color="#fff"/>
-        </TouchableOpacity>
-      </Animatable.View>
-
-      {/* ---------- Body ---------- */}
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* arama */}
-        <Animatable.View animation="fadeInUp" duration={800} delay={200} style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color="#f75c5b" style={styles.searchIcon}/>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Üniversite veya kullanıcı ara…"
-            placeholderTextColor="#bbb"
-            value={searchValue}
-            onChangeText={setSearchValue}
-          />
+            <TouchableOpacity 
+              style={styles.profileBtn}
+              onPress={() => navigation.navigate('Profile', { user })}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="person-circle-outline" size={32} color="#fff"/>
+            </TouchableOpacity>
+          </Animated.View>
         </Animatable.View>
 
-        {/* menü listesi */}
-        <View style={styles.menuContainer}>
-          {menuItems.map((item, idx) => (
-            <Animatable.View key={idx} animation="fadeInUp" duration={600} delay={idx*80}>
-              <TouchableOpacity style={styles.menuItem} onPress={item.onPress} activeOpacity={0.85}>
-                <View style={styles.menuIconCircle}>
-                  <Ionicons name={item.icon} size={22} color="#fff"/>
-                </View>
-                <Text style={styles.menuText}>{item.label}</Text>
-              </TouchableOpacity>
-            </Animatable.View>
-          ))}
-        </View>
+        {/* ---------- MAIN CONTENT ---------- */}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Menu List */}
+          <Animated.View style={[styles.menuContainer, { opacity: fadeAnim }]}>
+            {menuItems.map((item, index) => (
+              <Animatable.View 
+                key={index} 
+                animation="fadeInUp" 
+                duration={600} 
+                delay={index * 60}
+                style={styles.menuItemWrapper}
+              >
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={item.onPress} 
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.menuIcon}>
+                    <Ionicons name={item.icon} size={24} color="#f75c5b"/>
+                  </View>
+                  <Text style={styles.menuText}>{item.label}</Text>
+                  <Ionicons name="chevron-forward" size={20} color="#ccc"/>
+                </TouchableOpacity>
+              </Animatable.View>
+            ))}
+          </Animated.View>
 
-        {/* çıkış */}
-        <Animatable.View animation="pulse" iterationCount="infinite" duration={3000}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-            <Ionicons name="log-out-outline" size={20} color="#fff" style={{marginRight:8}}/>
-            <Text style={styles.logoutText}>Çıkış Yap</Text>
-          </TouchableOpacity>
-        </Animatable.View>
-      </ScrollView>
-    </LinearGradient>
+          {/* Logout Button */}
+          <Animatable.View animation="fadeInUp" duration={800} delay={400}>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
+              <Ionicons name="log-out-outline" size={22} color="#fff" style={styles.logoutIcon}/>
+              <Text style={styles.logoutText}>Çıkış Yap</Text>
+            </TouchableOpacity>
+          </Animatable.View>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 };
 
 export default HomeScreen;
 
-/* ——————————————————— styles aynı kaldı ——————————————————— */
 const styles = StyleSheet.create({
-  gradientContainer:{ flex:1,backgroundColor:'#fff' },
-  header:{ marginTop:36,marginHorizontal:18,marginBottom:18,
-           flexDirection:'row',alignItems:'center',paddingVertical:10 },
-  logoShadow:{ borderRadius:32,backgroundColor:'#fff',padding:5,
-               shadowColor:'#000',shadowOffset:{width:0,height:4},
-               shadowOpacity:0.10,shadowRadius:10,elevation:6,marginRight:12 },
-  logo:{ borderRadius:24,width:44,height:44,resizeMode:'contain',backgroundColor:'#fff' },
-  headerText:{ flex:1,justifyContent:'center' },
-  welcomeText:{ color:'#fff',fontSize:15,fontWeight:'500',opacity:0.95,marginBottom:1 },
-  usernameText:{ color:'#fff',fontSize:20,fontWeight:'700',
-                 textShadowColor:'rgba(0,0,0,0.1)',textShadowOffset:{width:0,height:2},
-                 textShadowRadius:4 },
-  profileIconWrapper:{ padding:6,backgroundColor:'rgba(255,255,255,0.18)',
-                       borderRadius:18,marginLeft:8 },
+  // MAIN CONTAINERS
+  safeContainer: {
+    flex: 1,
+    backgroundColor: '#f75c5b',
+  },
+  gradientContainer: {
+    flex: 1,
+  },
 
-  scrollContent:{ paddingHorizontal:16,paddingBottom:28 },
+  // CLEAN HEADER
+  header: {
+    paddingTop: 15,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    marginRight: 15,
+  },
+  logoShadow: {
+    borderRadius: 30,
+    backgroundColor: '#fff',
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  logo: {
+    borderRadius: 24,
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
+    backgroundColor: '#fff',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  welcomeText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  usernameText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  profileBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
 
-  searchContainer:{ flexDirection:'row',alignItems:'center',backgroundColor:'#fff',
-                    borderRadius:24,paddingHorizontal:14,paddingVertical:8,
-                    marginBottom:18,shadowColor:'#000',shadowOffset:{width:0,height:3},
-                    shadowOpacity:0.08,shadowRadius:8,elevation:4 },
-  searchIcon:{ marginRight:10,color:'#f75c5b' },
-  searchInput:{ flex:1,fontSize:15,color:'#333',fontWeight:'500' },
+  // CONTENT
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
 
-  menuContainer:{ marginBottom:18 },
-  menuItem:{ flexDirection:'row',alignItems:'center',backgroundColor:'#fff',
-             padding:13,borderRadius:16,marginBottom:10,
-             shadowColor:'#000',shadowOffset:{width:0,height:2},
-             shadowOpacity:0.07,shadowRadius:6,elevation:3,
-             borderWidth:1,borderColor:'rgba(0,0,0,0.03)' },
-  menuIconCircle:{ width:32,height:32,borderRadius:16,backgroundColor:'#f75c5b',
-                   alignItems:'center',justifyContent:'center',marginRight:12,
-                   shadowColor:'#f75c5b',shadowOffset:{width:0,height:1},
-                   shadowOpacity:0.10,shadowRadius:4,elevation:2 },
-  menuText:{ fontSize:15,fontWeight:'600',color:'#2D3436',letterSpacing:0.2 },
+  // CLEAN MENU
+  menuContainer: {
+    marginBottom: 30,
+  },
+  menuItemWrapper: {
+    marginBottom: 12,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.02)',
+  },
+  menuIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f8f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: '#f75c5b20',
+  },
+  menuText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2d3436',
+    letterSpacing: 0.3,
+  },
 
-  logoutButton:{ flexDirection:'row',alignItems:'center',backgroundColor:'#f75c5b',
-                 borderRadius:16,padding:12,justifyContent:'center',marginTop:8,
-                 borderWidth:1,borderColor:'rgba(255,255,255,0.2)',
-                 shadowColor:'#f75c5b',shadowOffset:{width:0,height:2},
-                 shadowOpacity:0.12,shadowRadius:5,elevation:3 },
-  logoutText:{ fontSize:15,fontWeight:'700',color:'#fff',letterSpacing:0.4 },
+  // LOGOUT
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  logoutIcon: {
+    marginRight: 8,
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    letterSpacing: 0.4,
+  },
 });
