@@ -180,14 +180,7 @@ export default function AdminSoruDetay() {
                     <Text style={styles.modernMetaValue}>{detay.konu}</Text>
                   </View>
                 </View>
-                
-                <View style={styles.modernMetaRow}>
-                  <View style={styles.modernMetaItem}>
-                    <Icon name="library" size={16} color="#f75c5b" />
-                    <Text style={styles.modernMetaLabel}>Bölüm:</Text>
-                    <Text style={styles.modernMetaValue}>{detay.bolum}</Text>
-                  </View>
-                </View>
+               
                 
                 <View style={styles.modernMetaRow}>
                   <View style={styles.modernMetaItem}>

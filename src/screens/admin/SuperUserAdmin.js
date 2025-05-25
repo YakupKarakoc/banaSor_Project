@@ -52,13 +52,13 @@ export default function SuperUserAdmin({ navigation, route }) {
   const [toggling,     setToggling]     = useState({});      // 
   // 
   // { [id]: boolean }
- const [showPending,   setShowPending]   = useState(false);
+
   const [pending,       setPending]       = useState([]);
   const [loadingPending,setLoadingPending]= useState(false);
   const [actionLoading, setActionLoading] = useState({}); // { [oneriId]: bool }
   useEffect(() => {
     fetchData();
-    fetchPending();  // yeni ekledik
+      // yeni ekledik
   }, []);
 
   async function fetchData() {
@@ -110,74 +110,9 @@ export default function SuperUserAdmin({ navigation, route }) {
 };
 
 
-   const fetchPending = async () => {
-  setLoadingPending(true);
-  try {
-    const res = await axios.get(
-      `${BASE_URL}/api/admin/bekleyenOneriler`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  
 
-    // Gelen camel‐case olmayan alanları mapping yapıyoruz:
-   const mapped = res.data.map(r=>({
-  oneriId:               r.oneriId,
-  onerenKullaniciId:     r.onerenKullaniciId,
-  onerilenKullaniciId:   r.onerilenKullaniciId,
-  onerenKullaniciAdi:    r.onerenKullaniciAdi,
-  onerilenKullaniciAdi:  r.onerilenKullaniciAdi,
-  oneriTarihi:           r.oneriTarihi,
-}));
-
-
-    setPending(mapped);
-  } catch (err) {
-    Alert.alert('Hata', 'Bekleyen öneriler yüklenemedi.');
-  } finally {
-    setLoadingPending(false);
-  }
-};
-
-  const handleKarar = async (oneriId, karar, onerilenKullaniciId) => {
-  // Loading state'i aç
-  setActionLoading(prev => ({ ...prev, [oneriId]: true }));
-
-  try {
-    // 1) Superuser kararı kaydet
-    await axios.post(
-      `${BASE_URL}/api/admin/superUserKarar`,
-      { oneriId, karar },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    // 2) Eğer onaylandıysa, doğrudan admin yap
-    if (karar === 'Onaylandi') {
-      if (!onerilenKullaniciId) {
-        throw new Error('Önerilen kullanıcı ID bulunamadı.');
-      }
-      await axios.post(
-        `${BASE_URL}/api/admin/dogrudanAdmin`,
-        { kullaniciId: onerilenKullaniciId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    }
-
-    // 3) Listeyi yenile ve kullanıcıya bilgi ver
-    await fetchPending();
-    Alert.alert(
-      'Başarılı',
-      karar === 'Onaylandi'
-        ? 'Kullanıcı admin olarak atandı.'
-        : 'Öneri reddedildi.'
-    );
-
-  } catch (err) {
-    Alert.alert('Hata', err.response?.data?.mesaj || err.message);
-  } finally {
-    // Loading state'i kapat
-    setActionLoading(prev => ({ ...prev, [oneriId]: false }));
-  }
-};
-
+ 
 
 
 
@@ -450,121 +385,7 @@ if (showUsers) {
   );
 }
 
-  // ——— Bekleyen Öneriler Görünümü ———
-  if (showPending) {
-    return (
-      <SafeAreaView style={styles.safeContainer}>
-        <StatusBar backgroundColor="#f75c5b" barStyle="light-content" />
-        <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
-
-          {/* Premium Header */}
-          <View style={styles.modernHeader}>
-            <View style={styles.headerContent}>
-              <TouchableOpacity style={styles.modernBackBtn} onPress={() => setShowPending(false)}>
-                <Icon name="arrow-back" size={24} color="#fff" />
-              </TouchableOpacity>
-              <View style={styles.headerTitleContainer}>
-                <Text style={styles.modernHeaderTitle}>Bekleyen Öneriler</Text>
-                <Text style={styles.modernHeaderSubtitle}>Admin Onayları</Text>
-              </View>
-              <View style={styles.headerSpacer} />
-            </View>
-          </View>
-
-          {loadingPending
-            ? <View style={styles.modernLoadingContainer}>
-              <View style={styles.loadingSpinner}>
-                <ActivityIndicator size="large" color="#fff" />
-              </View>
-              <Text style={styles.modernLoadingText}>Öneriler yükleniyor...</Text>
-            </View>
-            : (
-              <FlatList
-                data={pending}
-                keyExtractor={item => String(item.oneriId)}
-                contentContainerStyle={styles.modernListContainer}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                  <View style={styles.modernEmptyContainer}>
-                    <View style={styles.emptyIconContainer}>
-                      <Icon name="time-outline" size={80} color="rgba(255,255,255,0.4)" />
-                    </View>
-                    <Text style={styles.modernEmptyText}>Bekleyen öneri yok</Text>
-                    <Text style={styles.modernEmptySubText}>Tüm öneriler değerlendirilmiş</Text>
-                  </View>
-                }
-                renderItem={({ item }) => (
-                  <View style={styles.modernProposalCard}>
-                    <View style={styles.modernProposalHeader}>
-                      <View style={styles.modernProposalUsers}>
-                        <View style={styles.modernProposalUserContainer}>
-                          <View style={styles.modernProposalAvatar}>
-                            <Icon name="person" size={18} color="#fff" />
-                          </View>
-                          <Text style={styles.modernProposalUserName}>{item.onerenKullaniciAdi}</Text>
-                        </View>
-
-                        <Icon name="arrow-forward" size={22} color="#ccc" style={styles.modernArrowIcon} />
-
-                        <View style={styles.modernProposalUserContainer}>
-                          <View style={styles.modernProposalAvatar}>
-                            <Icon name="person" size={18} color="#fff" />
-                          </View>
-                          <Text style={styles.modernProposalUserName}>{item.onerilenKullaniciAdi}</Text>
-                        </View>
-                      </View>
-
-                      <Text style={styles.modernProposalDate}>
-                        {new Date(item.oneriTarihi).toLocaleDateString('tr-TR')}
-                      </Text>
-                    </View>
-
-                    <View style={styles.modernProposalActions}>
-                      {actionLoading[item.oneriId] ? (
-                        <View style={styles.modernProposalLoadingContainer}>
-                          <ActivityIndicator color="#f75c5b" />
-                          <Text style={styles.modernProposalLoadingText}>İşleniyor...</Text>
-                        </View>
-                      ) : (
-                        <>
-                          <TouchableOpacity
-                            style={styles.modernApproveBtn}
-                            onPress={() =>
-                              handleKarar(
-                                item.oneriId,
-                                'Onaylandi',
-                                item.onerilenKullaniciId
-                              )
-                            }
-                          >
-                            <Icon name="checkmark-circle" size={22} color="#fff" />
-                            <Text style={styles.modernActionBtnText}>Onayla</Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={styles.modernRejectBtn}
-                            onPress={() =>
-                              handleKarar(
-                                item.oneriId,
-                                'Reddedildi'
-                              )
-                            }
-                          >
-                            <Icon name="close-circle" size={22} color="#fff" />
-                            <Text style={styles.modernActionBtnText}>Reddet</Text>
-                          </TouchableOpacity>
-                        </>
-                      )}
-                    </View>
-                  </View>
-                )}
-              />
-            )
-          }
-        </LinearGradient>
-      </SafeAreaView>
-    );
-  }
+  
 
   // TAB_DATA tanımı
   const TAB_DATA = {
@@ -697,12 +518,15 @@ if (showUsers) {
                 <Icon name="people" size={22} color="#fff" />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.modernHeaderBtn}
-                onPress={() => setShowPending(true)}
-              >
-                <Icon name="time" size={22} color="#fff" />
-              </TouchableOpacity>
+                <TouchableOpacity
+   style={styles.modernHeaderBtn}
+    onPress={() => navigation.navigate('PendingSuggestions', { token })}
+  >
+    <Icon name="time" size={22} color="#fff" />
+  </TouchableOpacity>
+
+             
+
             </View>
           </View>
         </View>

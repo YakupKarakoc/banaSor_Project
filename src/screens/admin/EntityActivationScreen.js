@@ -240,15 +240,7 @@ export default function EntityActivationScreen({ navigation }) {
                 <Text style={styles.statsLabel}>Pasif Fakülte</Text>
               </View>
               
-              <View style={styles.statsCard}>
-                <View style={styles.statsIconContainer}>
-                  <Icon name="book" size={22} color="#2196F3"/>
-                </View>
-                <Text style={styles.statsNumber}>
-                  {Object.values(deptMap).flat().filter(d => d.aktifMi).length}
-                </Text>
-                <Text style={styles.statsLabel}>Aktif Bölüm</Text>
-              </View>
+             
             </View>
           </View>
         )}

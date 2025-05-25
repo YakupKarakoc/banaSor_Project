@@ -344,47 +344,40 @@ if (showUsers) {
                     </Text>
                   </View>
 
-                  <View style={styles.modernUserActions}>
-                    {userFilter === 'admin' ? (
-                      toggling[item.kullaniciid]
-                        ? <View style={styles.actionLoadingContainer}>
-                            <ActivityIndicator size="small" color="#ff6b6b" />
-                          </View>
-                        : (
-                          <TouchableOpacity
-                            style={styles.modernRemoveBtn}
-                            onPress={()=>handleRemoveAdmin(item.kullaniciid)}
-                          >
-                            <Icon name="remove-circle" size={26} color="#ff6b6b"/>
-                          </TouchableOpacity>
-                        )
-                    ) : (
-                      <View style={styles.modernToggleContainer}>
-                        {toggling[item.kullaniciid] ? (
-                          <View style={styles.actionLoadingContainer}>
-                            <ActivityIndicator size="small" color="#f75c5b" />
-                          </View>
-                        ) : (
-                          <Switch
-                            value={!!item.aktifmi}
-                            onValueChange={val=>handleToggleUser(item.kullaniciid, val)}
-                            trackColor={{ false: '#e0e0e0', true: '#f75c5b' }}
-                            thumbColor={item.aktifmi ? '#fff' : '#f4f3f4'}
-                          />
-                        )}
-                      </View>
-                    )}
+                 <View style={styles.modernUserActions}>
+  {userFilter === 'admin' ? (
+    // Admin filtresindeysek: hiçbir aksiyon butonu yok
+    null
+  ) : (
+    <>
+      {/* Aktif/Pasif Toggle */}
+      {toggling[item.kullaniciid] ? (
+        <View style={styles.actionLoadingContainer}>
+          <ActivityIndicator size="small" color="#f75c5b" />
+        </View>
+      ) : (
+        <Switch
+          value={!!item.aktifmi}
+          onValueChange={val => handleToggleUser(item.kullaniciid, val)}
+          trackColor={{ false: '#e0e0e0', true: '#f75c5b' }}
+          thumbColor={item.aktifmi ? '#fff' : '#f4f3f4'}
+        />
+      )}
 
-                    {userFilter === 'all' && item.kullanicirolu !== 'Admin' && (
-                      <TouchableOpacity
-                        style={styles.modernMakeAdminBtn}
-                        onPress={()=>handleAdminOner(item.kullaniciid)}
-                      >
-                        <Icon name="person-add" size={22} color="#fff"/>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
+      {/* “Tümü” filtresindeysek ve kullanıcı zaten Admin değilse “Öner” butonu */}
+      {userFilter === 'all' && item.kullanicirolu !== 'Admin' && (
+        <TouchableOpacity
+          style={styles.modernMakeAdminBtn}
+          onPress={() => handleAdminOner(item.kullaniciid)}
+        >
+          <Icon name="person-add" size={22} color="#fff" />
+        </TouchableOpacity>
+      )}
+    </>
+  )}
+</View>
+</View>
+
               )}
             />
           )

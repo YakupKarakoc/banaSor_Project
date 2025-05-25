@@ -15,11 +15,14 @@ import {
 import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { getToken } from '../utils/auth';
+
 
 const { width } = Dimensions.get('window');
 const BASE = 'http://10.0.2.2:3000/api';
 
-export default function Favoriler({ navigation }) {
+export default function Favoriler({ navigation, route }) {
+  
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -53,118 +56,72 @@ export default function Favoriler({ navigation }) {
   };
 
   const loadFavorites = async () => {
-    try {
-      const response = await axios.get(`${BASE}/takip/takipEdilenler`);
-      console.log('Favoriler API response:', response.data);
-      console.log('Takip edilen listesi:', response.data.takipEdilenler);
-      
-      if (response.data.takipEdilenler && response.data.takipEdilenler.length > 0) {
-        console.log('İlk item örneği:', response.data.takipEdilenler[0]);
-        console.log('İlk item keys:', Object.keys(response.data.takipEdilenler[0]));
-      }
-      
-      setList(response.data.takipEdilenler);
-    } catch (error) {
-      console.error('Favoriler yükleme hatası:', error);
-      Alert.alert('Hata', 'Favoriler yüklenirken bir hata oluştu.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const unfollowUniversity = async (universiteId, universiteName) => {
-    Alert.alert(
-      'Takipten Çıkar',
-      `${universiteName} üniversitesini takipten çıkarmak istediğinize emin misiniz?`,
-      [
-        {
-          text: 'İptal',
-          style: 'cancel',
-        },
-        {
-          text: 'Takipten Çıkar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              console.log('Takipten çıkarma isteği - Üniversite adı:', universiteName);
-              
-              // Üniversite adına göre farklı endpoint'leri deneyelim
-              let response;
-              try {
-                // 1. Deneme: POST ile üniversite adı
-                console.log('1. Deneme: POST /takip/takiptenCikar ile ad');
-                response = await axios.post(`${BASE}/takip/takiptenCikar`, {
-                  universiteAdi: universiteName
-                });
-              } catch (firstError) {
-                console.log('1. endpoint başarısız:', firstError.response?.status, firstError.message);
-                try {
-                  // 2. Deneme: POST ile farklı parametre
-                  console.log('2. Deneme: POST /takip/takiptenCikar ile ad (farklı parametre)');
-                  response = await axios.post(`${BASE}/takip/takiptenCikar`, {
-                    ad: universiteName
-                  });
-                } catch (secondError) {
-                  console.log('2. endpoint başarısız:', secondError.response?.status, secondError.message);
-                  try {
-                    // 3. Deneme: DELETE ile üniversite adı encode edilmiş
-                    console.log('3. Deneme: DELETE /takip/takipCik ile encode edilmiş ad');
-                    const encodedName = encodeURIComponent(universiteName);
-                    response = await axios.delete(`${BASE}/takip/takipCik/${encodedName}`);
-                  } catch (thirdError) {
-                    console.log('3. endpoint başarısız:', thirdError.response?.status, thirdError.message);
-                    try {
-                      // 4. Deneme: POST ile takipCik
-                      console.log('4. Deneme: POST /takip/takipCik ile ad');
-                      response = await axios.post(`${BASE}/takip/takipCik`, {
-                        universiteAdi: universiteName
-                      });
-                    } catch (fourthError) {
-                      console.log('4. endpoint başarısız:', fourthError.response?.status, fourthError.message);
-                      // 5. Deneme: DELETE ile query parameter
-                      console.log('5. Deneme: DELETE /takip/takiptenCikar ile query');
-                      response = await axios.delete(`${BASE}/takip/takiptenCikar`, {
-                        params: { universiteAdi: universiteName }
-                      });
-                    }
-                  }
-                }
-              }
-              
-              console.log('Başarılı response:', response.data);
-              
-              // Listeyi güncelle - ad ile filter et
-              setList(prevList => prevList.filter(item => item.ad !== universiteName));
-              
-              Alert.alert('Başarılı', `${universiteName} takipten çıkarıldı.`);
-            } catch (error) {
-              console.error('Tüm endpoint\'ler başarısız:', error);
-              console.error('Error response:', error.response?.data);
-              console.error('Error status:', error.response?.status);
-              console.error('Error config URL:', error.config?.url);
-              
-              let errorMessage = 'Takipten çıkarma işlemi başarısız oldu.';
-              if (error.response?.data?.message) {
-                errorMessage += `\nHata: ${error.response.data.message}`;
-              } else if (error.response?.status) {
-                errorMessage += `\nHata Kodu: ${error.response.status}`;
-              }
-              
-              Alert.alert('Hata', errorMessage);
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
+  setLoading(true);
+  try {
+    const token = await getToken();            // ← TOKEN’I ÇEK
+    const response = await axios.get(
+      `${BASE}/takip/takipEdilenler`,
+      { headers:{ Authorization:`Bearer ${token}` } }
     );
-  };
+    setList(response.data.takipEdilenler);
+  } catch (error) {
+    console.error('Favoriler yükleme hatası:', error);
+    Alert.alert('Hata', 'Favoriler yüklenirken bir hata oluştu.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+const unfollowUniversity = async (universiteId, universiteName) => {
+  if (!universiteId) {
+    Alert.alert('Hata', 'Üniversite ID eksik.');
+    return;
+  }
+
+  Alert.alert(
+    'Takipten Çıkar',
+    `${universiteName} üniversitesini takipten çıkarmak istediğinize emin misiniz?`,
+    [
+      { text: 'İptal', style: 'cancel' },
+      {
+        text: 'Çıkar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setLoading(true);
+            const token = await getToken(); // veya route.params.token
+
+            await axios.delete(
+              `${BASE}/takip/takipCik/${universiteId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Ön yüzde de listeden sil
+            setList(prev => prev.filter(u => u.universiteId !== universiteId));
+            Alert.alert('Başarılı', `${universiteName} takipten çıkarıldı.`);
+          } catch (err) {
+            console.error(err);
+            Alert.alert('Hata', err.response?.data?.message || 'İşlem başarısız.');
+          } finally {
+            setLoading(false);
+          }
+        }
+      }
+    ]
+  );
+};
+
+
 
   const renderFavoriteItem = ({ item, index }) => {
     // Debug: Item objesini console'a bas
     console.log('Favorite item object:', item);
     console.log('Available keys:', Object.keys(item));
+
+    const universiteId   = item.universiteId;        // artık burada olmalı
+ // ad alanı
+    
     
     // Üniversite adını al
     const universiteName = item.ad || item.name || item.universite_adi || 'Üniversite';
@@ -196,12 +153,7 @@ export default function Favoriler({ navigation }) {
               <Text style={styles.modernUniversityName} numberOfLines={2}>
                 {universiteName}
               </Text>
-              <View style={styles.modernLocationContainer}>
-                <Icon name="location" size={14} color="#00b894" />
-                <Text style={styles.modernUniversityLocation}>
-                  {item.sehir ?? 'Şehir bilgisi yok'}
-                </Text>
-              </View>
+              
             </View>
           </View>
           
@@ -225,7 +177,7 @@ export default function Favoriler({ navigation }) {
           <View style={styles.singleActionContainer}>
             <TouchableOpacity
               style={styles.removeButtonLarge}
-              onPress={() => unfollowUniversity(null, universiteName)}
+              onPress={() => unfollowUniversity(universiteId, universiteName)}
               activeOpacity={0.8}
             >
               <Icon name="heart-dislike" size={20} color="#fff" />
@@ -274,7 +226,7 @@ export default function Favoriler({ navigation }) {
           ) : (
             <FlatList
               data={list}
-              keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+               keyExtractor={item => String(item.universiteId)}
               renderItem={renderFavoriteItem}
               contentContainerStyle={styles.modernListContainer}
               showsVerticalScrollIndicator={false}
