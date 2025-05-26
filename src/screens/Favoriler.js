@@ -63,6 +63,7 @@ export default function Favoriler({ navigation, route }) {
       `${BASE}/takip/takipEdilenler`,
       { headers:{ Authorization:`Bearer ${token}` } }
     );
+   
     setList(response.data.takipEdilenler);
   } catch (error) {
     console.error('Favoriler yükleme hatası:', error);
@@ -92,14 +93,15 @@ const unfollowUniversity = async (universiteId, universiteName) => {
             setLoading(true);
             const token = await getToken(); // veya route.params.token
 
-            await axios.delete(
-              `${BASE}/takip/takipCik/${universiteId}`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
+           await axios.delete(
+   `${BASE}/takip/takipCik/${universiteId}`,
+   { headers: { Authorization: `Bearer ${token}` } }
+ );
 
             // Ön yüzde de listeden sil
-            setList(prev => prev.filter(u => u.universiteId !== universiteId));
+            setList(prev => prev.filter(u => u.universiteid !== universiteId));
             Alert.alert('Başarılı', `${universiteName} takipten çıkarıldı.`);
+            // await loadFavorites();
           } catch (err) {
             console.error(err);
             Alert.alert('Hata', err.response?.data?.message || 'İşlem başarısız.');
@@ -118,14 +120,11 @@ const unfollowUniversity = async (universiteId, universiteName) => {
     // Debug: Item objesini console'a bas
     console.log('Favorite item object:', item);
     console.log('Available keys:', Object.keys(item));
+const universiteId   = item.universiteid;
+  const universiteName = item.ad;
 
-    const universiteId   = item.universiteId;        // artık burada olmalı
- // ad alanı
-    
-    
-    // Üniversite adını al
-    const universiteName = item.ad || item.name || item.universite_adi || 'Üniversite';
-    console.log('Üniversite adı:', universiteName);
+  console.log('Üniversite ID:', universiteId);
+  console.log('Üniversite adı:', universiteName);
     
     return (
       <Animated.View
@@ -226,8 +225,8 @@ const unfollowUniversity = async (universiteId, universiteName) => {
           ) : (
             <FlatList
               data={list}
-               keyExtractor={item => String(item.universiteId)}
-              renderItem={renderFavoriteItem}
+ keyExtractor={item => String(item.universiteid)}
+               renderItem={renderFavoriteItem}
               contentContainerStyle={styles.modernListContainer}
               showsVerticalScrollIndicator={false}
               ListFooterComponent={() => (
