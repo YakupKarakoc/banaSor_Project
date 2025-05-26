@@ -77,42 +77,22 @@ export default function KonularScreen({ navigation }) {
     }
   };
 
-  // Load Questions for Selected Topic
-  const loadTopicQuestions = async (topicId) => {
-    setLoadingSorular(true);
-    try {
-      // Get all questions and filter by topic
-      const res = await axios.get(`${BASE_URL}/api/soru/getir`);
-      const allQuestions = res.data;
-      
-      // Filter questions by topic ID
-      const topicQuestions = allQuestions.filter(q => {
-        const questionTopicId = q.konuId || q.konuid;
-        return questionTopicId === topicId;
-      });
+ // Load Questions for Selected Topic (YENİ API'ye göre)
+const loadTopicQuestions = async (topicId) => {
+  setLoadingSorular(true);
+  try {
+    const res = await axios.get(`${BASE_URL}/api/soru/getir/konu`, {
+      params: { konuId: topicId }
+    });
+    setSorular(res.data);
+  } catch (err) {
+    console.error('Konu soruları yüklenirken hata:', err);
+    setSorular([]); // hata anında boşalt
+  } finally {
+    setLoadingSorular(false);
+  }
+};
 
-      // Enrich with like data
-      const enriched = await Promise.all(
-        topicQuestions.map(async q => {
-          try {
-            const begRes = await axios.get(`${BASE_URL}/api/soru/begeni/${q.soruid}`);
-            return {
-              ...q,
-              kullaniciBegendiMi: begRes.data?.begendiMi ?? false,
-            };
-          } catch (err) {
-            return { ...q, kullaniciBegendiMi: false };
-          }
-        })
-      );
-
-      setSorular(enriched);
-    } catch (err) {
-      console.error('Konu soruları yüklenirken hata:', err);
-    } finally {
-      setLoadingSorular(false);
-    }
-  };
 
   // Handle Topic Selection
   const handleTopicPress = (topic) => {
@@ -181,56 +161,58 @@ export default function KonularScreen({ navigation }) {
     </Animated.View>
   );
 
-  // Render Question Item
-  const renderQuestionItem = ({ item, index }) => (
-    <Animated.View
-      style={[
-        styles.modernQuestionCard,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: fadeAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.95, 1]
-            })}
-          ]
-        }
-      ]}
+ // DÜZENLENMİŞ
+const renderQuestionItem = ({ item, index }) => (
+  <Animated.View
+    style={[
+      styles.modernQuestionCard,
+      {
+        opacity: fadeAnim,
+        transform: [
+          { translateY: slideAnim },
+          { scale: fadeAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.95, 1]
+          })}
+        ]
+      }
+    ]}
+  >
+    <TouchableOpacity
+      style={styles.modernQuestionContent}
+      activeOpacity={0.8}
+      onPress={() => navigation.navigate('QuestionDetail', { soruId: item.soruId })}
     >
-      <TouchableOpacity
-        style={styles.modernQuestionContent}
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('QuestionDetail', { soruId: item.soruid })}
-      >
-        <View style={styles.modernQuestionHeader}>
-          <View style={styles.modernQuestionAvatar}>
-            <Icon name="help-circle" size={20} color="#fff" />
-          </View>
-          <View style={styles.modernQuestionInfo}>
-            <Text style={styles.modernQuestionTitle} numberOfLines={2}>
-              {item.icerik}
-            </Text>
-            <View style={styles.modernQuestionMeta}>
-              <Icon name="person" size={14} color="#6c5ce7" />
-              <Text style={styles.modernQuestionMetaText}>{item.kullaniciadi}</Text>
-              <Icon name="chatbubbles" size={14} color="#00b894" style={{ marginLeft: 12 }} />
-              <Text style={styles.modernQuestionMetaText}>{item.cevapsayisi || 0} cevap</Text>
-            </View>
+      <View style={styles.modernQuestionHeader}>
+        <View style={styles.modernQuestionAvatar}>
+          <Icon name="help-circle" size={20} color="#fff" />
+        </View>
+        <View style={styles.modernQuestionInfo}>
+          <Text style={styles.modernQuestionTitle} numberOfLines={2}>
+            {item.icerik}
+          </Text>
+          <View style={styles.modernQuestionMeta}>
+            <Icon name="person" size={14} color="#6c5ce7" />
+            <Text style={styles.modernQuestionMetaText}>{item.kullaniciAd}</Text>
+            <Icon name="chatbubbles" size={14} color="#00b894" style={{ marginLeft: 12 }} />
+            <Text style={styles.modernQuestionMetaText}>{item.cevapSayisi || 0} cevap</Text>
           </View>
         </View>
+      </View>
 
-        <View style={styles.modernQuestionActions}>
-          <LikeButton
-            soruId={item.soruid}
-            likedInit={item.kullaniciBegendiMi}
-            countInit={item.begenisayisi}
-            dark={false}
-          />
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
+      <View style={styles.modernQuestionActions}>
+        {/* LikeButton senin eskiye göre gerekirse field adını güncelle */}
+        <LikeButton
+          soruId={item.soruId}
+          likedInit={false}  // yeni API'de beğeni bilgisi yoksa false
+          countInit={item.begeniSayisi}
+          dark={false}
+        />
+      </View>
+    </TouchableOpacity>
+  </Animated.View>
+);
+
 
   // Render Content Based on Screen Mode
   const renderContent = () => {
@@ -282,12 +264,12 @@ export default function KonularScreen({ navigation }) {
       }
 
       return (
-        <FlatList
-          data={sorular}
-          keyExtractor={item => item.soruid.toString()}
-          renderItem={renderQuestionItem}
-          contentContainerStyle={styles.modernListContainer}
-          showsVerticalScrollIndicator={false}
+      <FlatList
+  data={sorular}
+  keyExtractor={item => (item.soruId !== undefined && item.soruId !== null ? item.soruId.toString() : Math.random().toString())}
+  renderItem={renderQuestionItem}
+  contentContainerStyle={styles.modernListContainer}
+  showsVerticalScrollIndicator={false}
           ListEmptyComponent={() => (
             <View style={styles.modernEmptyContainer}>
               <View style={styles.emptyIconContainer}>

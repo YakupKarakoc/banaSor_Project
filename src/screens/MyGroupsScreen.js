@@ -1,122 +1,76 @@
-// src/screens/MyGroupsScreen.js
-
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  StatusBar,
-  Alert,
-  SafeAreaView,
-  ScrollView,
+  View, Text, FlatList, StyleSheet, ActivityIndicator,
+  TouchableOpacity, StatusBar, SafeAreaView, Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 import { getToken } from '../utils/auth';
+
+// !!! BURAYA KENDİ KULLANICI ADINI GETİREN YAPINI KOY !!!
+// Örnek: asyncStorage veya JWT'den dinamik alabilirsin.
+const myUsername = "hhoglu11"; // <- Bunu dinamik yap istersen!
 
 const BASE = 'http://10.0.2.2:3000';
 
 export default function MyGroupsScreen() {
   const navigation = useNavigation();
-  const isFocused = useIsFocused();
-
-  const [myGroups, setMyGroups] = useState([]);
-  const [adminGroups, setAdminGroups] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [leavingId, setLeavingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  // Header
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
   }, [navigation]);
 
-  // Data Fetch
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
   const fetchGroups = async () => {
     setLoading(true);
     try {
       const token = await getToken();
-
-      // Yönetici olduğun gruplar
-      const adminRes = await axios.get(`${BASE}/api/grup/kurdugumGruplar`, {
+      const res = await axios.get(`${BASE}/api/grup/uyeOldugumGruplar`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
-      // Üye olduğun gruplar
-      const myRes = await axios.get(`${BASE}/api/grup/uyeOldugumGruplar`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      setAdminGroups(Array.isArray(adminRes.data) ? adminRes.data : []);
-      setMyGroups(Array.isArray(myRes.data) ? myRes.data : []);
+      const gruplar = res.data?.gruplar ?? [];
+      setGroups(gruplar);
     } catch (e) {
-      console.error(e);
-      Alert.alert('Hata', 'Gruplarınız getirilemedi');
+      Alert.alert('Hata', 'Gruplar yüklenemedi');
+      setGroups([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (isFocused) fetchGroups();
-  }, [isFocused]);
-
-  // Gruptan çık
-  const handleLeaveGroup = (grupId) => {
-    Alert.alert(
-      'Gruptan Çık',
-      'Bu gruptan çıkmak istediğinize emin misiniz?',
-      [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Çık',
-          style: 'destructive',
-          onPress: async () => {
-            setLeavingId(grupId);
-            try {
-              const token = await getToken();
-              await axios.delete(`${BASE}/api/grup/gruptanCik/${grupId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-              });
-              fetchGroups();
-            } catch (e) {
-              Alert.alert('Hata', 'Çıkılamadı: ' + (e.response?.data?.message ?? ''));
-            } finally {
-              setLeavingId(null);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  // Grubu sil (sadece yönetici)
-  const handleDeleteGroup = (grupId) => {
+  // Sadece kurucuysa silme aktif!
+  const handleDelete = (grupid) => {
     Alert.alert(
       'Grubu Sil',
-      'Bu grubu silmek istediğinize emin misiniz?',
+      'Bu grubu silmek istediğine emin misin? Grupta birden fazla üye varsa silinemez!',
       [
         { text: 'İptal', style: 'cancel' },
         {
           text: 'Sil',
           style: 'destructive',
           onPress: async () => {
-            setDeletingId(grupId);
+            setDeletingId(grupid);
             try {
               const token = await getToken();
-              await axios.delete(`${BASE}/api/grup/grupSil/${grupId}`, {
+              await axios.delete(`${BASE}/api/grup/grupSil/${grupid}`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
-              fetchGroups();
+              setGroups(prev => prev.filter(g => g.grupid !== grupid));
+              Alert.alert('Başarılı', 'Grup silindi.');
             } catch (e) {
-              Alert.alert('Hata', 'Silinemedi: ' + (e.response?.data?.message ?? ''));
+              // API'den dönen hatayı göster
+              const msg = e?.response?.data?.message || "Grup silinemedi. (Belki birden fazla üye var?)";
+              Alert.alert('Hata', msg);
             } finally {
               setDeletingId(null);
             }
@@ -126,196 +80,159 @@ export default function MyGroupsScreen() {
     );
   };
 
-  // Render Fonksiyonu
-  const renderGroupCard = ({ item, admin = false }) => (
-    <View style={styles.groupCard}>
-      <View style={styles.groupCardHeader}>
-        <Ionicons name="people" size={24} color="#00bcd4" />
-        <View style={{ marginLeft: 12 }}>
-          <Text style={styles.groupName}>{item.ad || item.grupad || item.grupAd || item.baslik}</Text>
-          <Text style={styles.groupDetail}>
-            {admin
-              ? 'Kurucu: Siz'
-              : `Kurucu: ${item.kurucuadi || item.kurucu || item.kurucuAd || '-'}`}
+  const renderItem = ({ item }) => (
+    <View style={styles.card} key={item.grupid}>
+      <View style={styles.cardContent}>
+        <View style={styles.iconArea}>
+          <Ionicons name="people-circle" size={32} color="#6c5ce7" />
+        </View>
+        <View style={styles.infoArea}>
+          <Text style={styles.groupName}>{item.grupadi}</Text>
+          <Text style={styles.groupMeta}>
+            Kurucu: <Text style={{ fontWeight: 'bold' }}>{item.olusturankullanici}</Text>
           </Text>
-          <Text style={styles.groupDetail}>
-            Üye Sayısı: {item.uyesayisi ?? item.uyeSayisi ?? '-'}
+          <Text style={styles.groupMeta}>
+            Takipçi: {item.takipcisayisi}
           </Text>
         </View>
-      </View>
-      <View style={styles.groupActions}>
-        {admin ? (
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={() => handleDeleteGroup(item.grupid || item.grupId || item.id)}
-            disabled={deletingId === (item.grupid || item.grupId || item.id)}
-          >
-            {deletingId === (item.grupid || item.grupId || item.id)
-              ? <ActivityIndicator size="small" color="#fff" />
-              : <Ionicons name="trash" size={18} color="#fff" />}
-            <Text style={styles.actionText}>
-              {deletingId === (item.grupid || item.grupId || item.id) ? 'Siliniyor...' : 'Sil'}
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.leaveBtn}
-            onPress={() => handleLeaveGroup(item.grupid || item.grupId || item.id)}
-            disabled={leavingId === (item.grupid || item.grupId || item.id)}
-          >
-            {leavingId === (item.grupid || item.grupId || item.id)
-              ? <ActivityIndicator size="small" color="#fff" />
-              : <Ionicons name="exit" size={18} color="#fff" />}
-            <Text style={styles.actionText}>
-              {leavingId === (item.grupid || item.grupId || item.id) ? 'Çıkılıyor...' : 'Çık'}
-            </Text>
-          </TouchableOpacity>
-        )}
+       
+        
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar backgroundColor="#00bcd4" barStyle="light-content" />
-      <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.safe}>
-
-        {/* Header */}
+    <SafeAreaView style={styles.safeContainer}>
+      <StatusBar backgroundColor="#f75c5b" barStyle="light-content" />
+      <LinearGradient colors={['#f75c5b', '#ff8a5c']} style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Gruplarım</Text>
-          <Ionicons name="people" size={24} color="#fff" />
+          <Text style={styles.headerTitle}>Topluluklarım</Text>
         </View>
-
-        <ScrollView contentContainerStyle={{ padding: 20 }}>
-          {/* Yönetici Olduğun Gruplar */}
-          <Text style={styles.sectionTitle}>Yönetici Olduğun Gruplar</Text>
-          {adminGroups.length === 0 ? (
-            <Text style={styles.emptyText}>Hiç grup kurmamışsın</Text>
-          ) : (
-            <FlatList
-              data={adminGroups}
-              keyExtractor={item => (item.grupid || item.grupId || item.id || Math.random()).toString()}
-              renderItem={({ item }) => renderGroupCard({ item, admin: true })}
-              scrollEnabled={false}
-            />
-          )}
-
-          {/* Üye Olduğun Gruplar */}
-          <Text style={styles.sectionTitle}>Üye Olduğun Gruplar</Text>
-          {myGroups.length === 0 ? (
-            <Text style={styles.emptyText}>Üyesi olduğun grup yok</Text>
-          ) : (
-            <FlatList
-              data={myGroups}
-              keyExtractor={item => (item.grupid || item.grupId || item.id || Math.random()).toString()}
-              renderItem={({ item }) => renderGroupCard({ item, admin: false })}
-              scrollEnabled={false}
-            />
-          )}
-        </ScrollView>
+        {loading ? (
+          <View style={styles.loaderArea}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.loaderText}>Yükleniyor...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={groups}
+            keyExtractor={item => item.grupid?.toString()}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>Henüz üye olduğunuz grup yok</Text>
+            }
+          />
+        )}
       </LinearGradient>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safeContainer: { flex: 1, backgroundColor: '#f75c5b' },
+  container: { flex: 1 },
   header: {
+    paddingTop: 18,
+    paddingHorizontal: 20,
+    paddingBottom: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    justifyContent: 'space-between',
     backgroundColor: 'transparent',
   },
-  headerBtn: {
-    backgroundColor: 'rgba(0,0,0,0.09)',
-    borderRadius: 20,
-    padding: 7,
-    marginRight: 8,
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   headerTitle: {
-    color: '#fff',
     fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: 1.1,
-    flex: 1,
-    textAlign: 'center',
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 1,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginTop: 22,
-    marginBottom: 8,
-    color: '#222',
-    letterSpacing: 0.2,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 32,
   },
-  emptyText: {
-    color: '#aaa',
-    fontSize: 14,
-    marginBottom: 16,
-    marginLeft: 10,
-  },
-  groupCard: {
+  card: {
     backgroundColor: '#fff',
-    borderRadius: 14,
-    marginBottom: 15,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    borderRadius: 18,
+    marginBottom: 16,
     elevation: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(0,188,212,0.07)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.10,
+    shadowRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
-  groupCardHeader: {
+  cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  iconArea: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f3f0fc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  infoArea: {
+    flex: 1,
   },
   groupName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 2,
-    letterSpacing: 0.3,
+    color: '#2d3436',
+    marginBottom: 4,
   },
-  groupDetail: {
+  groupMeta: {
     fontSize: 13,
-    color: '#888',
-    fontWeight: '500',
-    letterSpacing: 0.2,
-  },
-  groupActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 6,
-  },
-  leaveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e17055',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginRight: 7,
+    color: '#636e72',
+    marginBottom: 2,
   },
   deleteBtn: {
-    flexDirection: 'row',
+    backgroundColor: '#e17055',
+    borderRadius: 8,
+    padding: 8,
+    marginLeft: 10,
     alignItems: 'center',
-    backgroundColor: '#00bcd4',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#e17055',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
-  actionText: {
+  loaderArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loaderText: {
     color: '#fff',
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  emptyText: {
+    color: '#fff',
+    marginTop: 60,
+    fontSize: 16,
     fontWeight: '700',
-    marginLeft: 6,
-    fontSize: 13,
-    letterSpacing: 0.2,
+    textAlign: 'center',
+    letterSpacing: 0.3,
   },
 });

@@ -114,10 +114,7 @@ export default function App() {
 
         {/* Main */}
         <Stack.Screen name="Home" component={Home} />
-        <Stack.Navigator>
-  {/* ...diğer ekranlar */}
-  <Stack.Screen name="MyGroups" component={MyGroupsScreen} />
-</Stack.Navigator>
+ 
        
 
 
@@ -125,6 +122,10 @@ export default function App() {
         <Stack.Screen name="Universiteler" component={UniversitelerListesi} />
         <Stack.Screen name="UniversiteDetay" component={UniversiteDetay} />
         <Stack.Screen name="QuestionList" component={QuestionListScreen} />
+        
+ 
+  <Stack.Screen name="MyGroups" component={MyGroupsScreen} />
+
 
         {/* Favorites & Profile */}
         <Stack.Screen name="Favoriler" component={Favoriler} />
