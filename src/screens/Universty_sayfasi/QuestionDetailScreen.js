@@ -65,8 +65,10 @@ export default function QuestionDetailScreen() {
           const id = c.cevapId ?? c.cevapid;
           try {
             const { data: tepkiRes } = await axios.get(
-              `${BASE}/api/soru/cevap/tepki/${id}`
-            );
+  `${BASE}/api/soru/cevap/tepki`,
+  { params: { cevapId: id } }     // ← cevapId parametre olarak ekliyoruz
+);
+
             return { ...c, kullaniciTepkisi: tepkiRes.tepki ?? null };
           } catch {
             return { ...c, kullaniciTepkisi: null };

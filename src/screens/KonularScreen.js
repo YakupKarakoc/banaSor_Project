@@ -87,7 +87,7 @@ const loadTopicQuestions = async (topicId) => {
     setSorular(res.data);
   } catch (err) {
     console.error('Konu soruları yüklenirken hata:', err);
-    setSorular([]); // hata anında boşalt
+     // hata anında boşalt
   } finally {
     setLoadingSorular(false);
   }
@@ -111,7 +111,7 @@ const loadTopicQuestions = async (topicId) => {
   const handleBackToTopics = () => {
     setScreenMode('topics');
     setSelectedTopic(null);
-    setSorular([]);
+   
     
     // Reset and restart animations
     fadeAnim.setValue(0);
@@ -160,8 +160,6 @@ const loadTopicQuestions = async (topicId) => {
       </TouchableOpacity>
     </Animated.View>
   );
-
- // DÜZENLENMİŞ
 const renderQuestionItem = ({ item, index }) => (
   <Animated.View
     style={[
@@ -170,12 +168,14 @@ const renderQuestionItem = ({ item, index }) => (
         opacity: fadeAnim,
         transform: [
           { translateY: slideAnim },
-          { scale: fadeAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0.95, 1]
-          })}
-        ]
-      }
+          {
+            scale: fadeAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.95, 1],
+            }),
+          },
+        ],
+      },
     ]}
   >
     <TouchableOpacity
@@ -188,24 +188,32 @@ const renderQuestionItem = ({ item, index }) => (
           <Icon name="help-circle" size={20} color="#fff" />
         </View>
         <View style={styles.modernQuestionInfo}>
-          <Text style={styles.modernQuestionTitle} numberOfLines={2}>
+          <Text style={styles.modernQuestionTitle}numberOfLines={2}>
             {item.icerik}
           </Text>
           <View style={styles.modernQuestionMeta}>
             <Icon name="person" size={14} color="#6c5ce7" />
-            <Text style={styles.modernQuestionMetaText}>{item.kullaniciAd}</Text>
-            <Icon name="chatbubbles" size={14} color="#00b894" style={{ marginLeft: 12 }} />
-            <Text style={styles.modernQuestionMetaText}>{item.cevapSayisi || 0} cevap</Text>
+            <Text style={styles.modernQuestionMetaText}>
+              {item.kullaniciAdi}
+            </Text>
+            <Icon
+              name="chatbubbles"
+              size={14}
+              color="#00b894"
+              style={{ marginLeft: 12 }}
+            />
+            <Text style={styles.modernQuestionMetaText}>
+              {parseInt(item.cevapSayisi, 10)} cevap
+            </Text>
           </View>
         </View>
       </View>
 
       <View style={styles.modernQuestionActions}>
-        {/* LikeButton senin eskiye göre gerekirse field adını güncelle */}
         <LikeButton
           soruId={item.soruId}
-          likedInit={false}  // yeni API'de beğeni bilgisi yoksa false
-          countInit={item.begeniSayisi}
+          likedInit={false}
+          countInit={parseInt(item.begeniSayisi, 10)}
           dark={false}
         />
       </View>
@@ -266,8 +274,8 @@ const renderQuestionItem = ({ item, index }) => (
       return (
       <FlatList
   data={sorular}
-  keyExtractor={item => (item.soruId !== undefined && item.soruId !== null ? item.soruId.toString() : Math.random().toString())}
-  renderItem={renderQuestionItem}
+  extraData={sorular}  
+keyExtractor={item => item.soruId.toString()}  renderItem={renderQuestionItem}
   contentContainerStyle={styles.modernListContainer}
   showsVerticalScrollIndicator={false}
           ListEmptyComponent={() => (
@@ -458,7 +466,7 @@ const styles = StyleSheet.create({
   // CONTENT
   modernContentContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+  backgroundColor: '#f2f2f2',   // daha açık gri bir zemin
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
     marginHorizontal: 10,
@@ -553,7 +561,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 1,
-    borderColor: 'rgba(108, 92, 231, 0.05)',
+  borderColor: '#ddd',           // belirgin bir gri border
   },
   modernQuestionContent: {
     padding: 16,
@@ -583,7 +591,7 @@ const styles = StyleSheet.create({
   modernQuestionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#2D3436',
+  color: '#000',         
     lineHeight: 20,
     marginBottom: 8,
     letterSpacing: 0.2,
@@ -594,7 +602,7 @@ const styles = StyleSheet.create({
   },
   modernQuestionMetaText: {
     fontSize: 12,
-    color: '#666',
+    color: '#333',
     marginLeft: 4,
     fontWeight: '600',
     letterSpacing: 0.2,
