@@ -26,6 +26,7 @@ export default function MyContentScreen() {
     { label: 'Cevaplarım',  icon: 'chatbubbles',      target: 'MyAnswers',    color: '#00b894' },
     { label: 'Forumlarım',  icon: 'people-circle',    target: 'MyForums',     color: '#e17055' },
     { label: 'Entrylerim',  icon: 'document-text',    target: 'MyEntries',    color: '#0984e3' },
+    { label: 'Gruplarım',   icon: 'people',           target: 'MyGroups',     color: '#00bcd4' }, // YENİ EKLEDİK
   ];
 
   return (
