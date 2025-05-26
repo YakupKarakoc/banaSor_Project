@@ -152,12 +152,7 @@ export default function MyForumsScreen() {
           {item.baslik}
         </Text>
 
-        <View style={styles.modernForumMeta}>
-          <View style={styles.modernMetaItem}>
-            <Ionicons name="school" size={16} color="#e17055" />
-            <Text style={styles.modernMetaText}>Uni ID: {item.universiteid}</Text>
-          </View>
-        </View>
+        
       </TouchableOpacity>
 
       <View style={styles.modernActions}>

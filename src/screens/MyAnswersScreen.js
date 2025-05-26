@@ -19,7 +19,7 @@ import Ion from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
 import { getToken } from '../utils/auth';
-import ReactionButton from '../components/ReactionButton';
+
 
 const BASE = 'http://10.0.2.2:3000';
 
@@ -141,10 +141,7 @@ export default function MyAnswersScreen() {
               <Text style={styles.modernMetaText}>{formatted}</Text>
             </View>
             
-            <View style={styles.modernReactions}>
-              <ReactionButton entryId={id} type="Like"    countInit={likeCount} />
-              <ReactionButton entryId={id} type="Dislike" countInit={dislikeCount}/>
-            </View>
+           
           </View>
         </View>
 

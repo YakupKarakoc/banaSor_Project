@@ -23,6 +23,7 @@ import UpdateAnswer   from './src/screens/UpdateAnswer'
 import UpdateForumScreen from './src/screens/UpdateForumScreen';
 import UpdateEntryScreen from './src/screens/UpdateEntryScreen';
 import GroupListScreen from './src/screens/GroupListScreen';
+import MyGroupsScreen from './src/screens/MyGroupsScreen';
 
 
 
@@ -113,6 +114,10 @@ export default function App() {
 
         {/* Main */}
         <Stack.Screen name="Home" component={Home} />
+        <Stack.Navigator>
+  {/* ...diğer ekranlar */}
+  <Stack.Screen name="MyGroups" component={MyGroupsScreen} />
+</Stack.Navigator>
        
 
 

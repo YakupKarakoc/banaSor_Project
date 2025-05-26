@@ -55,7 +55,7 @@ export default function MyEntriesScreen() {
   }, [isFocused]);
 
   // Entry sil
-  const handleDelete = (entryId) => {
+  const handleDelete = (entryid) => {
     Alert.alert(
       'Onay',
       'Bu entry\'yi silmek istediğinize emin misiniz?',
@@ -65,12 +65,12 @@ export default function MyEntriesScreen() {
           text: 'Sil',
           style: 'destructive',
           onPress: async () => {
-            setDeletingId(entryId);
+            setDeletingId(entryid);
             try {
               const token = await getToken();
               await axios.delete(`${BASE}/api/forum/entrySil`, {
                 headers: { Authorization: `Bearer ${token}` },
-                data: { entryId }  // Body içinde gönderiyoruz!
+                data: { entryId: entryid } // body: entryId olacak!
               });
               Alert.alert('Başarılı', 'Entry silindi.');
               fetchEntries();
@@ -94,7 +94,7 @@ export default function MyEntriesScreen() {
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => navigation.navigate('UpdateEntry', {
-          entryId: item.entryId,
+          entryId: item.entryid, // DÜZELTİLDİ
           mevcutIcerik: item.icerik
         })}
         style={styles.modernCardContent}
@@ -106,7 +106,7 @@ export default function MyEntriesScreen() {
           <View style={styles.modernEntryInfo}>
             <Text style={styles.modernEntryTitle}>Entry</Text>
             <View style={styles.modernEntryBadge}>
-              <Text style={styles.modernBadgeText}>ID: {item.entryId}</Text>
+              <Text style={styles.modernBadgeText}>ID: {item.entryid}</Text>
             </View>
           </View>
         </View>
@@ -119,18 +119,7 @@ export default function MyEntriesScreen() {
           <View style={styles.modernMetaRow}>
             <View style={styles.modernMetaItem}>
               <Ion name="chatbubbles" size={16} color="#0984e3" />
-              <Text style={styles.modernMetaText}>{item.forumBaslik}</Text>
-            </View>
-          </View>
-          
-          <View style={styles.modernStatsRow}>
-            <View style={styles.modernStatItem}>
-              <Ion name="thumbs-up" size={14} color="#00b894" />
-              <Text style={styles.modernStatText}>{item.likeSayisi || 0} beğeni</Text>
-            </View>
-            <View style={styles.modernStatItem}>
-              <Ion name="thumbs-down" size={14} color="#ff6b6b" />
-              <Text style={styles.modernStatText}>{item.dislikeSayisi || 0} dislike</Text>
+              <Text style={styles.modernMetaText}>{item.forumbaslik || item.forumBaslik}</Text>
             </View>
           </View>
         </View>
@@ -140,7 +129,7 @@ export default function MyEntriesScreen() {
         <TouchableOpacity
           style={styles.modernUpdateBtn}
           onPress={() => navigation.navigate('UpdateEntry', {
-            entryId: item.entryId,
+            entryId: item.entryid, // DÜZELTİLDİ
             mevcutIcerik: item.icerik
           })}
         >
@@ -150,16 +139,16 @@ export default function MyEntriesScreen() {
         
         <TouchableOpacity
           style={styles.modernDeleteBtn}
-          onPress={() => handleDelete(item.entryId)}
-          disabled={deletingId === item.entryId}
+          onPress={() => handleDelete(item.entryid)} // DÜZELTİLDİ
+          disabled={deletingId === item.entryid}
         >
-          {deletingId === item.entryId ? (
+          {deletingId === item.entryid ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
             <Ion name="trash" size={16} color="#fff" />
           )}
           <Text style={styles.modernActionText}>
-            {deletingId === item.entryId ? 'Siliniyor...' : 'Sil'}
+            {deletingId === item.entryid ? 'Siliniyor...' : 'Sil'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -208,7 +197,7 @@ export default function MyEntriesScreen() {
         ) : (
           <FlatList
             data={entries}
-            keyExtractor={e => (e.entryId ?? Math.random()).toString()}
+            keyExtractor={e => (e.entryid ?? Math.random()).toString()}
             renderItem={renderItem}
             contentContainerStyle={styles.modernListContainer}
             showsVerticalScrollIndicator={false}
@@ -218,6 +207,8 @@ export default function MyEntriesScreen() {
     </SafeAreaView>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   // MAIN CONTAINERS

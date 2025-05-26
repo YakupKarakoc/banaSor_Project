@@ -46,87 +46,92 @@ export default function ProfileScreen() {
     ]).start();
   }, []);
 
- const handleSave = async () => {
-  if (!ad.trim() || !soyad.trim() || !kullaniciAdi.trim()) {
-    return Alert.alert('Hata', 'Ad, soyad ve kullanıcı adı boş bırakılamaz.');
-  }
-
-  // Değişiklik kontrolü
-  const hasChanges = (
-    ad !== initialUser.ad ||
-    soyad !== initialUser.soyad ||
-    (kullaniciAdi !== (initialUser.kullaniciAdi ?? initialUser.kullaniciadi)) ||
-    (typeof initialUser.aktifMi === "boolean"
-      ? aktifMi !== initialUser.aktifMi
-      : aktifMi !== initialUser.aktifmi
-    ) ||
-    sifre.trim() // Şifre değiştirilmişse de bir değişiklik var
-  );
-
-  if (!hasChanges) {
-    return Alert.alert('Uyarı', 'Hiçbir değişiklik yapmadınız.');
-  }
-
-  setLoading(true);
-
-  try {
-    const body = {
-      ad,
-      soyad,
-      kullaniciAdi,
-      aktifMi,
-    };
-    
-    // Şifre sadece doldurulmuşsa gönder, boşsa hiç gönderme ki mevcut şifre korunsun
-    if (sifre.trim()) {
-      body.sifre = sifre;
+  const handleSave = async () => {
+    if (!ad.trim() || !soyad.trim() || !kullaniciAdi.trim()) {
+      return Alert.alert('Hata', 'Ad, soyad ve kullanıcı adı boş bırakılamaz.');
     }
 
-    console.log('Profil güncelleme body:', body); // Debug için
+    // Değişiklik kontrolü
+    const hasChanges = (
+      ad !== initialUser.ad ||
+      soyad !== initialUser.soyad ||
+      (kullaniciAdi !== (initialUser.kullaniciAdi ?? initialUser.kullaniciadi)) ||
+      (typeof initialUser.aktifMi === "boolean"
+        ? aktifMi !== initialUser.aktifMi
+        : aktifMi !== initialUser.aktifmi
+      ) ||
+      (sifre.trim() !== '')
+    );
 
-    const res = await axios.put(`${BASE_URL}/api/profil/guncelle`, body);
+    if (!hasChanges) {
+      return Alert.alert('Uyarı', 'Hiçbir değişiklik yapmadınız.');
+    }
 
-    console.log('API Response:', res.data); // Debug için
+    setLoading(true);
 
-    // Response'u güvenli kontrol et
-    if (res?.data && typeof res.data === 'object' && res.data.kullanici) {
-      const updatedUser = {
-        ...initialUser,
-        ...res.data.kullanici,
-      };
-      Alert.alert('Başarılı', res.data.mesaj || 'Profiliniz güncellendi.', [
-        { text: 'Tamam', onPress: () => navigation.replace('Home', { user: updatedUser }) },
-      ]);
-    } else {
-      // Backend başarılı ama beklenen veri formatı yoksa, yine de başarılı say!
-      const updatedUser = {
-        ...initialUser,
+    try {
+      const body = {
         ad,
         soyad,
         kullaniciAdi,
         aktifMi,
       };
-      Alert.alert('Başarılı', 'Profiliniz güncellendi.', [
-        { text: 'Tamam', onPress: () => navigation.replace('Home', { user: updatedUser }) },
-      ]);
-    }
-  } catch (e) {
-    console.error('Profil güncelleme hatası:', e);
-    console.error('Error details:', e.response?.data); // Daha detaylı hata bilgisi
-    
-    const errorMsg =
-      e.response?.data?.mesaj ||
-      e.response?.data?.message ||
-      e.message ||
-      'Güncelleme başarısız.';
-    Alert.alert('Hata', errorMsg);
-  } finally {
-    setLoading(false);
-    setIsEditing(false);
-    setSifre(''); // Şifreyi temizle
-  }
-};
 
+      if (sifre.trim()) {
+        body.sifre = sifre;
+      }
+
+      console.log('Profil güncelleme body:', body);
+      console.log('Şifre gönderiliyor mu?', !!body.sifre);
+
+      const res = await axios.put(`${BASE_URL}/api/profil/guncelle`, body);
+
+      console.log('API Response:', res.data);
+
+      if (res?.data && typeof res.data === 'object' && res.data.kullanici) {
+        const updatedUser = {
+          ...initialUser,
+          ...res.data.kullanici,
+        };
+        Alert.alert('Başarılı', res.data.mesaj || 'Profiliniz güncellendi.', [
+          { text: 'Tamam', onPress: () => navigation.replace('Home', { user: updatedUser }) },
+        ]);
+      } else {
+        const updatedUser = {
+          ...initialUser,
+          ad,
+          soyad,
+          kullaniciAdi,
+          aktifMi,
+        };
+        Alert.alert('Başarılı', 'Profiliniz güncellendi.', [
+          { text: 'Tamam', onPress: () => navigation.replace('Home', { user: updatedUser }) },
+        ]);
+      }
+      setSifre('');
+    } catch (e) {
+      console.error('Profil güncelleme hatası:', e);
+      console.error('Error details:', e.response?.data);
+
+      let errorMsg = 'Güncelleme başarısız.';
+
+      if (e.response?.data) {
+        const data = e.response.data;
+        errorMsg = data.mesaj || data.message || data.error || errorMsg;
+
+        if (typeof errorMsg === 'string' && errorMsg.toLowerCase().includes('şifre')) {
+          errorMsg = 'Şifre güncelleme hatası: ' + errorMsg;
+        }
+      } else {
+        errorMsg = e.message || errorMsg;
+      }
+
+      Alert.alert('Hata', errorMsg);
+    } finally {
+      setLoading(false);
+      setIsEditing(false);
+    }
+  };
 
   return (
     <LinearGradient
@@ -152,7 +157,7 @@ export default function ProfileScreen() {
             <View style={styles.infoCard}>
               <InfoRow icon="person-outline" label="Ad Soyad" value={`${ad} ${soyad}`} />
               <InfoRow icon="at-outline" label="Kullanıcı Adı" value={kullaniciAdi} />
-              <InfoRow icon="lock-closed-outline" label="Şifre" value="******" />
+              <InfoRow icon="lock-closed-outline" label="Şifre" value="" />
               <InfoRow
                 icon="radio-outline"
                 label="Durum"
