@@ -10,6 +10,9 @@ import {
   Dimensions,
   StatusBar,
   SafeAreaView,
+  Modal,
+  TextInput,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -37,6 +40,20 @@ export default function KonularScreen({ navigation }) {
   // Animations
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
+
+  // --- Üniversite filtreleme için state'ler ---
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [universitySearch, setUniversitySearch] = useState('');
+  const [selectedUniversity, setSelectedUniversity] = useState(null);
+
+  // --- Benzersiz üniversite adlarını çıkar ---
+  const uniqueUniversities = Array.from(new Set(sorular.map(s => s.universiteAd || s.universitead || s.universiteadi || s.universiteAdi || s.university || s.universite).filter(Boolean)));
+  const filteredUniversities = uniqueUniversities.filter(u => u.toLowerCase().includes(universitySearch.toLowerCase()));
+
+  // --- Soruları filtrele ---
+  const filteredSorular = selectedUniversity
+    ? sorular.filter(s => (s.universiteAd || s.universitead || s.universiteadi || s.universiteAdi || s.university || s.universite) === selectedUniversity)
+    : sorular;
 
   // Navigation options
   React.useLayoutEffect(() => {
@@ -81,13 +98,17 @@ export default function KonularScreen({ navigation }) {
 const loadTopicQuestions = async (topicId) => {
   setLoadingSorular(true);
   try {
+    console.log('Konu soruları yükleniyor, topicId:', topicId);
     const res = await axios.get(`${BASE_URL}/api/soru/getir/konu`, {
       params: { konuId: topicId }
     });
-    setSorular(res.data);
+    console.log('API Response:', res.data);
+    console.log('Sorular sayısı:', res.data?.length || 0);
+    setSorular(res.data || []);
   } catch (err) {
     console.error('Konu soruları yüklenirken hata:', err);
-     // hata anında boşalt
+    console.error('Error response:', err.response?.data);
+    setSorular([]); // hata anında boşalt
   } finally {
     setLoadingSorular(false);
   }
@@ -96,7 +117,15 @@ const loadTopicQuestions = async (topicId) => {
 
   // Handle Topic Selection
   const handleTopicPress = (topic) => {
-    const topicId = topic.konuId || topic.konuid;
+    console.log('Topic seçildi:', topic); // Debug log
+    const topicId = topic.konuId || topic.konuid || topic.id;
+    console.log('Topic ID:', topicId); // Debug log
+    
+    if (!topicId) {
+      console.error('Topic ID bulunamadı!');
+      return;
+    }
+    
     setSelectedTopic(topic);
     setScreenMode('questions');
     loadTopicQuestions(topicId);
@@ -121,20 +150,8 @@ const loadTopicQuestions = async (topicId) => {
 
   // Render Topic Item
   const renderTopicItem = ({ item, index }) => (
-    <Animated.View
-      style={[
-        styles.modernTopicCard,
-        {
-          opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: fadeAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.95, 1]
-            })}
-          ]
-        }
-      ]}
+    <View
+      style={styles.modernTopicCard}
     >
       <TouchableOpacity
         style={styles.modernTopicContent}
@@ -143,83 +160,92 @@ const loadTopicQuestions = async (topicId) => {
       >
         <View style={styles.modernTopicHeader}>
           <View style={styles.modernTopicAvatar}>
-            <Icon name="bookmark" size={20} color="#fff" />
+            <Icon name="bookmark" size={24} color="#fff" />
           </View>
           <View style={styles.modernTopicInfo}>
             <Text style={styles.modernTopicTitle}>{item.ad ?? '—'}</Text>
-            <View style={styles.modernTopicBadge}>
-              <Text style={styles.modernTopicBadgeText}>
-                {item.soruSayisi ?? 0} SORU
-              </Text>
-            </View>
           </View>
           <View style={styles.modernTopicArrow}>
-            <Icon name="chevron-forward" size={20} color="#ccc" />
+            <Icon name="chevron-forward" size={22} color="#f75c5b" />
           </View>
         </View>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
-const renderQuestionItem = ({ item, index }) => (
-  <Animated.View
-    style={[
-      styles.modernQuestionCard,
-      {
-        opacity: fadeAnim,
-        transform: [
-          { translateY: slideAnim },
-          {
-            scale: fadeAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.95, 1],
-            }),
-          },
-        ],
-      },
-    ]}
-  >
-    <TouchableOpacity
-      style={styles.modernQuestionContent}
-      activeOpacity={0.8}
-      onPress={() => navigation.navigate('QuestionDetail', { soruId: item.soruId })}
+const renderQuestionItem = ({ item, index }) => {
+  // Debug log temizlendi
+  
+  const soruId = item.soruId || item.soruIdsi || item.soruid || item.id;
+  const icerik = item.icerik || item.soru || item.content || 'Soru içeriği yok';
+  const kullaniciAdi = item.kullaniciAdi || item.kullaniciadi || item.username || 'Bilinmeyen';
+  const cevapSayisi = item.cevapSayisi || item.cevapsayisi || item.answerCount || 0;
+  const begeniSayisi = item.begeniSayisi || item.begenisayisi || item.likeCount || 0;
+  
+  // Üniversite bilgisi için farklı field isimlerini kontrol et
+  const universiteName = item.universiteAd || item.universitead || item.universiteadi || item.universiteAdi || item.university || item.universite || null;
+  
+  // Debug: Üniversite bilgisini kontrol et
+  if (index === 0) { // Sadece ilk item için log bas ki spam olmasın
+    console.log('Soru verisi sample:', JSON.stringify(item, null, 2));
+    console.log('Üniversite adı:', universiteName);
+  }
+
+  return (
+    <View
+      style={[
+        styles.modernQuestionCard,
+        // Debug stilleri temizlendi, normal stiller
+      ]}
     >
-      <View style={styles.modernQuestionHeader}>
-        <View style={styles.modernQuestionAvatar}>
-          <Icon name="help-circle" size={20} color="#fff" />
-        </View>
-        <View style={styles.modernQuestionInfo}>
-          <Text style={styles.modernQuestionTitle}numberOfLines={2}>
-            {item.icerik}
-          </Text>
-          <View style={styles.modernQuestionMeta}>
-            <Icon name="person" size={14} color="#6c5ce7" />
-            <Text style={styles.modernQuestionMetaText}>
-              {item.kullaniciAdi}
+      <TouchableOpacity
+        style={styles.modernQuestionContent}
+        activeOpacity={0.8}
+        onPress={() => soruId && navigation.navigate('QuestionDetail', { soruId })}
+      >
+        <View style={styles.modernQuestionHeader}>
+          <View style={styles.modernQuestionAvatar}>
+            <Icon name="help-circle" size={20} color="#fff" />
+          </View>
+          <View style={styles.modernQuestionInfo}>
+            <Text style={styles.modernQuestionTitle} numberOfLines={2}>
+              {icerik}
             </Text>
-            <Icon
-              name="chatbubbles"
-              size={14}
-              color="#00b894"
-              style={{ marginLeft: 12 }}
-            />
-            <Text style={styles.modernQuestionMetaText}>
-              {parseInt(item.cevapSayisi, 10)} cevap
-            </Text>
+            <View style={styles.modernQuestionMeta}>
+              <Icon name="person" size={14} color="#6c5ce7" />
+              <Text style={styles.modernQuestionMetaText}>
+                {kullaniciAdi}
+              </Text>
+              {universiteName && (
+                <View style={styles.universityBadge}>
+                  <Icon name="school" size={14} color="#e17055" style={{ marginRight: 4 }} />
+                  <Text style={styles.universityBadgeText}>{universiteName}</Text>
+                </View>
+              )}
+              <Icon
+                name="chatbubbles"
+                size={14}
+                color="#00b894"
+                style={{ marginLeft: 12 }}
+              />
+              <Text style={styles.modernQuestionMetaText}>
+                {parseInt(cevapSayisi, 10)} cevap
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.modernQuestionActions}>
-        <LikeButton
-          soruId={item.soruId}
-          likedInit={false}
-          countInit={parseInt(item.begeniSayisi, 10)}
-          dark={false}
-        />
-      </View>
-    </TouchableOpacity>
-  </Animated.View>
-);
+        <View style={styles.modernQuestionActions}>
+          <LikeButton
+            soruId={soruId}
+            likedInit={false}
+            countInit={parseInt(begeniSayisi, 10)}
+            dark={false}
+          />
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 
   // Render Content Based on Screen Mode
@@ -260,6 +286,8 @@ const renderQuestionItem = ({ item, index }) => (
       );
     } else {
       // Questions View
+      // Debug log temizlendi
+      
       if (loadingSorular) {
         return (
           <View style={styles.modernLoadingContainer}>
@@ -273,9 +301,13 @@ const renderQuestionItem = ({ item, index }) => (
 
       return (
       <FlatList
-  data={sorular}
-  extraData={sorular}  
-keyExtractor={item => item.soruId.toString()}  renderItem={renderQuestionItem}
+  data={filteredSorular}
+  extraData={filteredSorular}  
+keyExtractor={(item, index) => {
+    const id = item.soruId || item.soruIdsi || item.soruid || item.id || index;
+    return id.toString();
+  }}
+  renderItem={renderQuestionItem}
   contentContainerStyle={styles.modernListContainer}
   showsVerticalScrollIndicator={false}
           ListEmptyComponent={() => (
@@ -291,6 +323,66 @@ keyExtractor={item => item.soruId.toString()}  renderItem={renderQuestionItem}
       );
     }
   };
+
+  // --- Filtre butonu ---
+  const renderFilterButton = () => (
+    <TouchableOpacity
+      style={styles.filterButton}
+      onPress={() => setFilterModalVisible(true)}
+    >
+      <Icon name="filter" size={20} color="#f75c5b" />
+      <Text style={styles.filterButtonText}>{selectedUniversity ? selectedUniversity : 'Üniversite Filtrele'}</Text>
+      {selectedUniversity && (
+        <TouchableOpacity onPress={() => setSelectedUniversity(null)}>
+          <Icon name="close-circle" size={18} color="#e17055" style={{ marginLeft: 6 }} />
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
+  );
+
+  // --- Filtre modalı ---
+  const renderFilterModal = () => (
+    <Modal
+      visible={filterModalVisible}
+      animationType="slide"
+      transparent
+      onRequestClose={() => setFilterModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Üniversite Seç</Text>
+          <TextInput
+            style={styles.modalSearch}
+            placeholder="Üniversite ara..."
+            value={universitySearch}
+            onChangeText={setUniversitySearch}
+            autoFocus
+          />
+          <FlatList
+            data={filteredUniversities}
+            keyExtractor={(item, idx) => item + idx}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.modalItem}
+                onPress={() => {
+                  setSelectedUniversity(item);
+                  setFilterModalVisible(false);
+                }}
+              >
+                <Icon name="school" size={18} color="#e17055" style={{ marginRight: 8 }} />
+                <Text style={styles.modalItemText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={<Text style={styles.modalEmpty}>Sonuç yok</Text>}
+            keyboardShouldPersistTaps="handled"
+          />
+          <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setFilterModalVisible(false)}>
+            <Text style={styles.modalCloseText}>Kapat</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <SafeAreaView style={styles.safeContainer}>
@@ -353,9 +445,11 @@ keyExtractor={item => item.soruId.toString()}  renderItem={renderQuestionItem}
 
         {/* Content Container */}
         <View style={styles.modernContentContainer}>
+          {screenMode === 'questions' && renderFilterButton()}
           {renderContent()}
         </View>
       </LinearGradient>
+      {screenMode === 'questions' && renderFilterModal()}
     </SafeAreaView>
   );
 }
@@ -477,77 +571,67 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   modernListContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    paddingBottom: 40,
+    flexGrow: 1,
   },
 
   // TOPIC CARDS
   modernTopicCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 20,
+    marginBottom: 16,
+    shadowColor: '#f75c5b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
-    borderColor: 'rgba(247, 92, 91, 0.05)',
+    borderColor: 'rgba(247, 92, 91, 0.1)',
+    overflow: 'hidden',
   },
   modernTopicContent: {
-    padding: 16,
+    padding: 20,
   },
   modernTopicHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   modernTopicAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#f75c5b',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 15,
+    marginRight: 16,
     shadowColor: '#f75c5b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
   },
   modernTopicInfo: {
     flex: 1,
+    justifyContent: 'center',
   },
   modernTopicTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2D3436',
-    marginBottom: 4,
-    letterSpacing: 0.3,
-  },
-  modernTopicBadge: {
-    backgroundColor: '#f75c5b',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    alignSelf: 'flex-start',
-  },
-  modernTopicBadgeText: {
-    color: '#fff',
-    fontSize: 10,
+    fontSize: 18,
     fontWeight: '800',
+    color: '#2D3436',
+    lineHeight: 24,
     letterSpacing: 0.5,
   },
   modernTopicArrow: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#f8f9fa',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(247, 92, 91, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: 'rgba(247, 92, 91, 0.15)',
   },
 
   // QUESTION CARDS  
@@ -561,7 +645,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 1,
-  borderColor: '#ddd',           // belirgin bir gri border
+    borderColor: '#e0e0e0',           // hafif gri border
+    minHeight: 100, // minimum height
   },
   modernQuestionContent: {
     padding: 16,
@@ -589,22 +674,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modernQuestionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-  color: '#000',         
-    lineHeight: 20,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#2D3436',         // daha koyu renk
+    lineHeight: 22,
     marginBottom: 8,
     letterSpacing: 0.2,
   },
   modernQuestionMeta: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa', // açık gri arka plan ekle
+    padding: 8,
+    borderRadius: 8,
+    flexWrap: 'wrap', // Uzun üniversite adları için wrap ekle
   },
   modernQuestionMetaText: {
-    fontSize: 12,
-    color: '#333',
+    fontSize: 13,
+    color: '#2D3436',
     marginLeft: 4,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   modernQuestionActions: {
@@ -674,5 +763,92 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     letterSpacing: 0.4,
+  },
+  universityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff4e6',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 10,
+    marginRight: 6,
+    marginTop: 2,
+  },
+  universityBadgeText: {
+    color: '#e17055',
+    fontWeight: '700',
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e17055',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  filterButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#e17055',
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#2D3436',
+    marginBottom: 16,
+  },
+  modalSearch: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  modalItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalItemText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2D3436',
+  },
+  modalEmpty: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  modalCloseBtn: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#e17055',
   },
 });

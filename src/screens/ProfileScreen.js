@@ -150,6 +150,12 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.name}>{ad} {soyad}</Text>
             <Text style={styles.username}>@{kullaniciAdi}</Text>
+            {typeof initialUser.puan !== 'undefined' && (
+              <View style={styles.pointBadge}>
+                <Icon name="star" size={16} color="#FFD700" style={{ marginRight: 4 }} />
+                <Text style={styles.pointText}>{initialUser.puan} puan</Text>
+              </View>
+            )}
           </View>
 
           {/* Görüntüleme veya Düzenleme */}
@@ -297,5 +303,20 @@ const styles = StyleSheet.create({
   buttonIcon: { marginRight: 6 },
   buttonText: { color: '#f75c5b', fontWeight: '700', fontSize: 15, letterSpacing: 0.3 },
   switchRow: { flexDirection: 'row', alignItems: 'center' },
+  pointBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#fffbe6',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginTop: 6,
+  },
+  pointText: {
+    color: '#e17055',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 });
 
