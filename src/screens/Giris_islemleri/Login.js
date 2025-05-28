@@ -211,51 +211,67 @@ const LoginScreen = () => {
         <Modal visible={modalVisible} transparent animationType="slide">
           <View style={styles.modalBackdrop}>
             <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>
-                {step === 1 ? 'Şifre Sıfırlama' : 'Yeni Şifre Belirle'}
-              </Text>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {step === 1 ? 'Şifre Sıfırlama' : 'Yeni Şifre Belirle'}
+                </Text>
+                <Pressable style={styles.modalClose} onPress={closeModal}>
+                  <Icon name="close-circle" size={28} color="#f75c5b" />
+                </Pressable>
+              </View>
 
               {step === 1 ? (
                 <>
-                  <TextInput
-                    style={styles.modalInput}
-                    placeholder="E-posta adresiniz"
-                    placeholderTextColor="#888"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={resetEmail}
-                    onChangeText={setResetEmail}
-                  />
+                  <Text style={styles.modalSubtitle}>
+                    Şifrenizi sıfırlamak için e-posta adresinizi girin
+                  </Text>
+                  <View style={styles.modalInputContainer}>
+                    <Icon name="mail-outline" size={22} color="#f75c5b" style={styles.modalInputIcon} />
+                    <TextInput
+                      style={styles.modalInput}
+                      placeholder="E-posta adresiniz"
+                      placeholderTextColor="#888"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={resetEmail}
+                      onChangeText={setResetEmail}
+                    />
+                  </View>
                   <Pressable style={styles.modalBtn} onPress={sendResetCode}>
                     <Text style={styles.modalBtnText}>Kod Gönder</Text>
                   </Pressable>
                 </>
               ) : (
                 <>
-                  <TextInput
-                    style={styles.modalInput}
-                    placeholder="Aldığınız kod"
-                    placeholderTextColor="#888"
-                    value={resetCode}
-                    onChangeText={setResetCode}
-                  />
-                  <TextInput
-                    style={styles.modalInput}
-                    placeholder="Yeni Şifre"
-                    placeholderTextColor="#888"
-                    secureTextEntry
-                    value={newPass}
-                    onChangeText={setNewPass}
-                  />
+                  <Text style={styles.modalSubtitle}>
+                    {resetEmail} adresine gelen kodu ve yeni şifrenizi girin
+                  </Text>
+                  <View style={styles.modalInputContainer}>
+                    <Icon name="key-outline" size={22} color="#f75c5b" style={styles.modalInputIcon} />
+                    <TextInput
+                      style={styles.modalInput}
+                      placeholder="Aldığınız kod"
+                      placeholderTextColor="#888"
+                      value={resetCode}
+                      onChangeText={setResetCode}
+                    />
+                  </View>
+                  <View style={styles.modalInputContainer}>
+                    <Icon name="lock-closed-outline" size={22} color="#f75c5b" style={styles.modalInputIcon} />
+                    <TextInput
+                      style={styles.modalInput}
+                      placeholder="Yeni Şifre"
+                      placeholderTextColor="#888"
+                      secureTextEntry
+                      value={newPass}
+                      onChangeText={setNewPass}
+                    />
+                  </View>
                   <Pressable style={styles.modalBtn} onPress={applyNewPassword}>
                     <Text style={styles.modalBtnText}>Şifreyi Güncelle</Text>
                   </Pressable>
                 </>
               )}
-
-              <Pressable style={styles.modalClose} onPress={closeModal}>
-                <Icon name="close-circle" size={28} color="#444" />
-              </Pressable>
             </View>
           </View>
         </Modal>
@@ -404,7 +420,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -416,5 +432,69 @@ const styles = StyleSheet.create({
     position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2
-  }})
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#2D3436',
+    letterSpacing: 0.5,
+  },
+  modalSubtitle: {
+    fontSize: 15,
+    color: '#636E72',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  modalInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 25,
+    height: 55,
+    marginBottom: 20,
+    paddingLeft: 55,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  modalInputIcon: {
+    position: 'absolute',
+    left: 18,
+  },
+  modalInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#2D3436',
+    height: '100%',
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  modalBtn: {
+    backgroundColor: '#f75c5b',
+    borderRadius: 25,
+    paddingVertical: 15,
+    alignItems: 'center',
+    shadowColor: '#f75c5b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalBtnText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  modalClose: {
+    padding: 5,
+  },
+});
